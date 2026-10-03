@@ -21,6 +21,12 @@ static PATTERNS: LazyLock<Vec<(Regex, &'static str)>> = LazyLock::new(|| {
         (r"\bAKIA[0-9A-Z]{16}\b", MASK),
         (r"\bAIza[0-9A-Za-z_\-]{35}", MASK),
         (r"\bxox[abprs]-[A-Za-z0-9-]{10,}", MASK),
+        // Cloudflare Artifacts git tokens (`art_v1_<hex>?expires=…`, `art_v2_…`).
+        (r"\bart_v[0-9]+_[A-Za-z0-9_]{16,}(?:\?expires=[0-9]+)?", MASK),
+        // gitbots owner keys.
+        (r"\bgitbots_ok_[A-Za-z0-9_\-]{16,}", MASK),
+        // JSON `"token": "…"` / `"owner_key": "…"`: keep the key.
+        (r#"("(?:token|owner_key|plaintext|secret|password|api_key)"\s*:\s*")[^"]{8,}(")"#, "$1[REDACTED]$2"),
         // `Authorization: Bearer <token>`: keep the scheme.
         (r"(?i)\b(bearer)\s+[A-Za-z0-9._~+/=\-]{16,}", "$1 [REDACTED]"),
         // `FOO_TOKEN=...`, `password: ...`: keep the key.
@@ -67,6 +73,18 @@ mod tests {
         assert!(!out.contains("hunter2"));
         assert!(out.contains("Bearer [REDACTED]"));
         assert!(out.contains("cargo test passed"));
+    }
+
+    #[test]
+    fn masks_artifacts_tokens_and_json_secrets() {
+        let input = r#"{"token": "art_v2_x_0123456789abcdefABCDEF?expires=1790000000", "remote": "https://x"}
+git -c http.extraHeader="Authorization: Bearer art_v1_0123456789abcdef0123456789abcdef01234567" push
+{"owner_key":"gitbots_ok_AbCdEf0123456789xyz"}"#;
+        let (out, hits) = redact(input);
+        assert!(hits >= 3, "{out}");
+        assert!(!out.contains("art_v2_x_0123") && !out.contains("art_v1_0123"), "{out}");
+        assert!(!out.contains("gitbots_ok_AbCd"), "{out}");
+        assert!(out.contains(r#""remote": "https://x""#), "{out}");
     }
 
     #[test]

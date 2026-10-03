@@ -26,7 +26,8 @@ pub use ledger::{Ledger, MergeOutcome, quarantine_path};
 pub use logs::Logs;
 pub use repo::Repo;
 pub use sync::{
-    BranchPush, PushStatus, RemoteSpec, SyncReport, fetch_branch, push_branches, sync, sync_with,
+    BranchPush, PushStatus, RemoteSpec, SyncReport, Tracking, fast_forward_branch, fetch_branch,
+    push_branches, sync, sync_with,
 };
 
 use gitbots_core::ledger::LedgerMeta;

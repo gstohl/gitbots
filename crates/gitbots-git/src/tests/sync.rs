@@ -8,7 +8,7 @@ use gitbots_core::ledger::LedgerKind;
 use super::*;
 use crate::{
     ACTIVITY_BRANCH, Activity, LOGS_BRANCH, Ledger, MergeOutcome, PushStatus, RemoteSpec,
-    SyncReport, fetch_branch, push_branches, sync, sync_with,
+    SyncReport, Tracking, fast_forward_branch, fetch_branch, push_branches, sync, sync_with,
 };
 
 struct Remote {
@@ -145,7 +145,7 @@ fn diverged_push_is_rejected_as_retryable_and_sync_recovers() -> Result<()> {
 }
 
 #[test]
-fn per_branch_remotes_carry_their_config_only_on_the_command_line() -> Result<()> {
+fn per_branch_remotes_keep_their_config_out_of_git_config() -> Result<()> {
     let r = remote();
     let logs_bare = r.bare.with_file_name("logs.git");
     std::fs::create_dir(&logs_bare)?;
@@ -212,5 +212,54 @@ fn push_branches_never_forces() -> Result<()> {
     );
     assert_eq!(pushed[1].status, PushStatus::Created);
     assert_eq!(git(&r.bare, &["rev-parse", "main"]), git(&a, &["rev-parse", "main"]));
+    Ok(())
+}
+
+#[test]
+fn fast_forward_branch_follows_the_remote_but_never_merges() -> Result<()> {
+    let r = remote();
+    let (a, b) = (r.a.workdir().unwrap(), r.b.workdir().unwrap());
+    let origin = RemoteSpec::new("origin");
+    assert_eq!(fast_forward_branch(&r.a, &origin, "main")?, Tracking::Missing);
+    std::fs::write(a.join("f.txt"), "1\n")?;
+    git(&a, &["add", "."]);
+    git(&a, &["commit", "-q", "-m", "one"]);
+    git(&a, &["push", "-q", "origin", "main"]);
+
+    // b has no main yet: created. Then a moves ahead and b follows, files too.
+    assert_eq!(fast_forward_branch(&r.b, &origin, "main")?, Tracking::FastForwarded);
+    git(&b, &["checkout", "-q", "main"]);
+    std::fs::write(a.join("f.txt"), "2\n")?;
+    git(&a, &["commit", "-qam", "two"]);
+    assert_eq!(fast_forward_branch(&r.a, &origin, "main")?, Tracking::Ahead);
+    git(&a, &["push", "-q", "origin", "main"]);
+    assert_eq!(fast_forward_branch(&r.b, &origin, "main")?, Tracking::FastForwarded);
+    assert_eq!(std::fs::read_to_string(b.join("f.txt"))?, "2\n");
+    assert_eq!(fast_forward_branch(&r.b, &origin, "main")?, Tracking::UpToDate);
+
+    // Both sides move: reported, nothing changes.
+    std::fs::write(a.join("f.txt"), "3a\n")?;
+    git(&a, &["commit", "-qam", "three a"]);
+    git(&a, &["push", "-q", "origin", "main"]);
+    std::fs::write(b.join("g.txt"), "3b\n")?;
+    git(&b, &["add", "."]);
+    git(&b, &["commit", "-qm", "three b"]);
+    let before = git(&b, &["rev-parse", "main"]);
+    assert!(matches!(fast_forward_branch(&r.b, &origin, "main")?, Tracking::Diverged { .. }));
+    assert_eq!(git(&b, &["rev-parse", "main"]), before);
+    Ok(())
+}
+
+#[test]
+fn remote_config_reaches_git_through_the_env_not_argv() -> Result<()> {
+    let f = fixture();
+    let spec =
+        RemoteSpec::new("origin").with_bearer("art_v1_secret").with_config("gitbots.probe", "yes");
+    let cmd = spec.command(&f.repo, &["config", "--get-all", "http.extraHeader"])?;
+    assert!(cmd.get_args().all(|a| !a.to_string_lossy().contains("art_v1")));
+    let out = crate::cli::output(cmd)?;
+    assert_eq!(String::from_utf8_lossy(&out.stdout).trim(), "Authorization: Bearer art_v1_secret");
+    let out = crate::cli::output(spec.command(&f.repo, &["config", "--get", "gitbots.probe"])?)?;
+    assert_eq!(String::from_utf8_lossy(&out.stdout).trim(), "yes");
     Ok(())
 }

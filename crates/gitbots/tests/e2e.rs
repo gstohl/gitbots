@@ -324,10 +324,11 @@ fn protected_merge_needs_an_interactive_human() {
     // fallback is refused without a terminal...
     let err = w.gitbots_err(&w.repo, &["review", &attempt, "accept", "--merge"], &[]);
     assert!(err.contains("interactive terminal"), "{err}");
-    // ...and refused outright when an agent harness is detected.
+    // ...and an agent harness that names no session acts as a session of its
+    // own (never as the human), which the mandate refuses.
     let err =
         w.gitbots_err(&w.repo, &["review", &attempt, "accept", "--merge"], &[("CLAUDECODE", "1")]);
-    assert!(err.contains("CLAUDECODE"), "{err}");
+    assert!(err.contains("`CLAUDECODE` says an agent") && err.contains("needs a human"), "{err}");
     // An agent gets told a human must decide.
     let other = w.gitbots(
         &w.repo,

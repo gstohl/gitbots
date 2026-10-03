@@ -30,6 +30,8 @@ use gitbots_git::{Activity, HookReport, Ledger, Logs, Repo};
 pub const PRODUCER: &str = concat!("gitbots/", env!("CARGO_PKG_VERSION"));
 const RECIPES_DIR: &str = ".gitbots/recipes/";
 const ACTIONS_DIR: &str = ".gitbots/actions/";
+/// Per-worktree binding of the session auto-started for an agent harness.
+const AUTO_SESSION_BINDING: &str = "auto-session";
 /// Never follow a ledger clock more than this far ahead of ours.
 const MAX_SKEW_MS: u64 = 5 * 60 * 1000;
 
@@ -43,6 +45,45 @@ pub struct ActorCtx {
 impl ActorCtx {
     pub fn system(component: &str) -> Self {
         Self { actor: Actor::system(component), via: Via::System }
+    }
+}
+
+/// The mandate refused a decision, or wants a human for it. A refusal
+/// stays a refusal on retry; callers tell it apart with `downcast_ref`.
+#[derive(Debug)]
+pub struct Refused(pub String);
+
+impl std::fmt::Display for Refused {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.0)
+    }
+}
+
+impl std::error::Error for Refused {}
+
+/// The idempotency key of a keyed write is already in the ledger.
+#[derive(Debug)]
+pub struct AlreadyRecorded {
+    pub key: String,
+}
+
+impl std::fmt::Display for AlreadyRecorded {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "already recorded (idempotency key `{}`)", self.key)
+    }
+}
+
+impl std::error::Error for AlreadyRecorded {}
+
+/// Context of a merge error after the review itself was recorded as `event`.
+#[derive(Debug)]
+pub struct NotMerged {
+    pub event: EventId,
+}
+
+impl std::fmt::Display for NotMerged {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "the review is recorded ({}), but the merge failed", self.event)
     }
 }
 
@@ -346,7 +387,9 @@ impl Project {
     // ---- identity -------------------------------------------------------
 
     /// Resolve who is acting: `--session` flag, then `GITBOTS_SESSION`, then
-    /// the session bound to this worktree, then the git-config human.
+    /// the session bound to this worktree, then (when an agent harness runs
+    /// this process) the agent's auto-started session, then the git-config
+    /// human. Agent work is never attributed to the human.
     pub fn resolve_actor(&self, explicit_session: Option<&str>) -> Result<ActorCtx> {
         if let Some(q) = explicit_session {
             return Ok(ActorCtx { actor: self.session(q)?.actor(), via: Via::Flag });
@@ -357,7 +400,43 @@ impl Project {
         if let Some(q) = gitbots_git::read_binding(&self.repo.git_dir(), "session")? {
             return Ok(ActorCtx { actor: self.session(&q)?.actor(), via: Via::Worktree });
         }
+        if let Some(marker) = agent_marker() {
+            let session = self.auto_session(&marker)?;
+            return Ok(ActorCtx { actor: session.actor(), via: Via::Env });
+        }
         self.human_ctx()
+    }
+
+    /// The session of an agent harness that named none (`marker` says one
+    /// runs this process): the one started for it in this worktree before
+    /// (binding `auto-session`), while the same agent runs and it hasn't
+    /// ended; else a new one, labelled `auto: <marker>`.
+    fn auto_session(&self, marker: &str) -> Result<Session> {
+        let agent =
+            detect_agent().unwrap_or_else(|| AgentDescriptor::new("unknown", "unknown", "unknown"));
+        let git_dir = self.repo.git_dir();
+        if let Some(id) = gitbots_git::read_binding(&git_dir, AUTO_SESSION_BINDING)?
+            && let Ok(session) = self.session(&id)
+            && session.agent.key() == agent.key()
+            && !self.board()?.sessions.get(&session.id).is_some_and(|s| s.ended)
+        {
+            return Ok(session);
+        }
+        let session = self.start_session(StartSession {
+            agent: Some(agent),
+            label: Some(format!("auto: {marker}")),
+            via: Some(Via::Env),
+            ..StartSession::default()
+        })?;
+        gitbots_git::write_binding(&git_dir, AUTO_SESSION_BINDING, session.id.as_str())?;
+        eprintln!(
+            "gitbots: `{marker}` says an agent runs this process, but no session was given: \
+             started {} as {}; this worktree reuses it (or `export GITBOTS_SESSION={}`)",
+            session.id,
+            session.agent.key(),
+            session.id
+        );
+        Ok(session)
     }
 
     fn human_ctx(&self) -> Result<ActorCtx> {
@@ -381,15 +460,18 @@ impl Project {
             return Ok(ctx.clone());
         }
         if let Some(marker) = agent_marker() {
-            bail!(
+            return Err(Refused(format!(
                 "refusing: this decision needs a human, but `{marker}` says an agent is running this \
                  process. Start a session (`gitbots session start`) or ask your human."
-            );
+            ))
+            .into());
         }
-        ensure!(
-            std::io::stdin().is_terminal(),
-            "refusing: this decision needs a human at an interactive terminal"
-        );
+        if !std::io::stdin().is_terminal() {
+            return Err(Refused(
+                "refusing: this decision needs a human at an interactive terminal".into(),
+            )
+            .into());
+        }
         Ok(ActorCtx { actor: ctx.actor.clone(), via: Via::Tty })
     }
 
@@ -450,10 +532,12 @@ impl Project {
             ctx,
             EventBody::SessionEnded(SessionEnded { session: session.clone(), summary }),
         )?;
-        if gitbots_git::read_binding(&self.repo.git_dir(), "session")?.as_deref()
-            == Some(session.as_str())
-        {
-            gitbots_git::remove_binding(&self.repo.git_dir(), "session")?;
+        for key in ["session", AUTO_SESSION_BINDING] {
+            if gitbots_git::read_binding(&self.repo.git_dir(), key)?.as_deref()
+                == Some(session.as_str())
+            {
+                gitbots_git::remove_binding(&self.repo.git_dir(), key)?;
+            }
         }
         Ok(session)
     }
@@ -499,7 +583,9 @@ impl Project {
         let Some(key) = idem else { return self.record(ctx, body) };
         let event = self.new_event(ctx, body)?.with_idem(key);
         let out = self.activity().append(std::slice::from_ref(&event))?;
-        ensure!(!out.written.is_empty(), "already recorded (idempotency key `{key}`)");
+        if out.written.is_empty() {
+            return Err(AlreadyRecorded { key: key.to_owned() }.into());
+        }
         Ok(event)
     }
 
@@ -833,10 +919,11 @@ impl Project {
         };
         match self.manifest.mandate.authorize(&ctx.actor, decision) {
             Authorization::Allowed => Ok(ctx),
-            Authorization::NeedsHuman { role } => bail!(
+            Authorization::NeedsHuman { role } => Err(Refused(format!(
                 "{decision} needs a human with role {role}; the attempt is waiting in `gitbots inbox`"
-            ),
-            Authorization::Denied { reason } => bail!("denied: {reason}"),
+            ))
+            .into()),
+            Authorization::Denied { reason } => Err(Refused(format!("denied: {reason}")).into()),
         }
     }
 
@@ -909,8 +996,7 @@ impl Project {
             idem,
         )?;
 
-        let mut merged = None;
-        if merge {
+        let merge_it = || -> Result<String> {
             let head = attempt.head.clone().context("attempt has no head")?;
             let source_commits =
                 self.repo.commits_between(&format!("refs/heads/{}", attempt.base), &head)?;
@@ -933,8 +1019,14 @@ impl Project {
             )?;
             e.on = Some(decided.id.clone());
             self.activity().append(std::slice::from_ref(&e))?;
-            merged = Some(commit);
-        }
+            Ok(commit)
+        };
+        let merged = match merge {
+            true => {
+                Some(merge_it().map_err(|e| e.context(NotMerged { event: decided.id.clone() }))?)
+            }
+            false => None,
+        };
         Ok(ReviewOutcome { attempt: attempt.id, decision, event: decided.id, merged })
     }
 

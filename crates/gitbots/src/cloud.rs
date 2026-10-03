@@ -10,14 +10,20 @@
 //! - **Tokens.** Artifacts tokens are per repo and per actor: an agent
 //!   session's token is minted with its `session` id, which is what makes its
 //!   pushes attested; the human's is minted without. Every push uses the
-//!   token of the actor it runs as. Tokens are cached in
-//!   `<git common dir>/gitbots/tokens/<repo>-<session|human>.json` (0600) until
-//!   60 s before they expire, and reach git only as
-//!   `-c http.extraHeader=...` on the command line.
-//! - **Sync.** `gitbots sync` union-merges the ledgers with the hosted repos,
-//!   pushes the trusted and attempt branches (never forced), applies the
-//!   dashboard's outbox as the human (the steward) and asks the Worker to
-//!   re-index. Mutating commands run a quick activity-only sync afterwards
+//!   token of the actor it runs as; an agent harness that names no session
+//!   acts as its auto-started one ([`Project::resolve_actor`]), never as the
+//!   human.
+//!   Tokens are cached in
+//!   `<git common dir>/gitbots/tokens/<repo>-<session|human>.json` (0600),
+//!   for the same `<url>#<project>` only, until 60 s before they expire, and
+//!   reach git only as `-c http.extraHeader=...` on the command line.
+//! - **Sync.** `gitbots sync` union-merges the ledgers with the hosted repos
+//!   and pushes code, never forced. The human's sync fast-forwards the
+//!   trusted branch from `gitbots-main`, pushes it and every attempt branch,
+//!   applies the dashboard's outbox as the human (the steward) and asks the
+//!   Worker to re-index. An agent session's sync pushes only the attempt
+//!   branches of its session family and never applies the outbox. Mutating
+//!   commands run a quick activity-only sync afterwards
 //!   (`gitbots.cloud.autoSync`, default on).
 //! - **Forks.** `gitbots cloud fork <attempt>` creates `<prj>-<att>` and adds it
 //!   as the plain remote `gitbots-fork-<attempt short id>`. Working in a fork is
@@ -25,13 +31,14 @@
 //!   push gitbots-fork-<id> <branch>`, with the token it printed (or a new one
 //!   from `gitbots cloud token --repo <fork repo>`).
 
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{BTreeMap, HashMap, HashSet};
 use std::fmt;
 use std::io::Write as _;
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 
-use anyhow::{Context, Result, anyhow, ensure};
+use anyhow::{Context, Result, bail, ensure};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -42,11 +49,11 @@ use gitbots_cloud::api::{
     ApiError, CreateProject, ForkCreated, ForkRequest, IngestReport, KnownRepo, OutboxAck,
     OutboxAction, OutboxItem, ProjectInfo, Remotes, RepoRef, TokenIssued, TokenRequest, TokenScope,
 };
-use gitbots_core::event::{ReviewDecision, short_sha};
-use gitbots_core::{AttemptId, EventId, SessionId, Via};
-use gitbots_git::{BranchPush, PushStatus, RemoteSpec, Repo, SyncReport};
+use gitbots_core::event::{HandoffTarget, ReviewDecision, short_sha};
+use gitbots_core::{AttemptId, AttemptState, AttemptView, EventId, SessionId, Via};
+use gitbots_git::{BranchPush, PushStatus, RemoteSpec, Repo, SyncReport, Tracking};
 
-use crate::project::{ActorCtx, CreateTask, PRODUCER, Project};
+use crate::project::{ActorCtx, CreateTask, NotMerged, PRODUCER, Project, Refused, agent_marker};
 
 pub const MAIN_REMOTE: &str = "gitbots-main";
 pub const LOGS_REMOTE: &str = "gitbots-logs";
@@ -377,6 +384,9 @@ struct CachedToken {
     expires_at: String,
     remote: String,
     scope: TokenScope,
+    /// The `<url>#<project>` it was minted for; reused only for that one.
+    #[serde(default)]
+    minted_for: String,
 }
 
 /// Whether a token expiring at `expires_at` (RFC 3339) is still worth using.
@@ -402,6 +412,18 @@ pub fn parse_repo(s: &str) -> RepoRef {
     }
 }
 
+// ---- who acts -------------------------------------------------------------
+
+/// Why `ctx` may not act as the human toward the Worker (apply the outbox,
+/// provision); `None` if it may. Never an agent session, and never a
+/// process an agent harness runs.
+pub fn not_the_human(ctx: &ActorCtx) -> Option<String> {
+    if let Some(marker) = agent_marker() {
+        return Some(format!("`{marker}` says an agent runs this process"));
+    }
+    (!ctx.actor.is_human()).then(|| format!("{} is not the human", ctx.actor.label()))
+}
+
 // ---- the project in the cloud ----------------------------------------------
 
 /// A configured project: its config, owner key and client.
@@ -410,6 +432,8 @@ pub struct Cloud<'p> {
     pub config: CloudConfig,
     pub key: OwnerKey,
     client: Client,
+    /// The Worker confirmed that the key belongs to `config.project`.
+    verified: AtomicBool,
 }
 
 impl fmt::Debug for Cloud<'_> {
@@ -442,7 +466,7 @@ impl<'p> Cloud<'p> {
 
     fn with_key(project: &'p Project, config: CloudConfig, key: OwnerKey) -> Result<Cloud<'p>> {
         let client = Client::new(&config.url, &key.key)?;
-        Ok(Cloud { project, config, key, client })
+        Ok(Cloud { project, config, key, client, verified: AtomicBool::new(false) })
     }
 
     pub fn client(&self) -> &Client {
@@ -451,6 +475,25 @@ impl<'p> Cloud<'p> {
 
     pub fn dashboard_link(&self) -> String {
         self.config.dashboard_link(&self.key.key)
+    }
+
+    /// Checks, once, that the owner key belongs to this repo's project. A key
+    /// from `GITBOTS_CLOUD_KEY` applies to every repo, and one for another
+    /// project must not mint tokens or apply decisions here.
+    async fn verify_project(&self) -> Result<()> {
+        if self.verified.load(Ordering::Relaxed) {
+            return Ok(());
+        }
+        let info = self.client.project().await?;
+        ensure!(
+            info.project_id == self.config.project,
+            "the owner key from {} belongs to project {}, but this repo is {}",
+            self.key.source,
+            info.project_id,
+            self.config.project
+        );
+        self.verified.store(true, Ordering::Relaxed);
+        Ok(())
     }
 
     /// `<git common dir>/gitbots/tokens/<repo>-<session|human>.json`.
@@ -470,6 +513,7 @@ impl<'p> Cloud<'p> {
             expires_at: issued.expires_at.clone(),
             remote: issued.remote.clone(),
             scope,
+            minted_for: self.config.credential_id(),
         };
         write_private(path, &serde_json::to_vec_pretty(&cached)?)
     }
@@ -482,6 +526,7 @@ impl<'p> Cloud<'p> {
             .ok()
             .and_then(|bytes| serde_json::from_slice::<CachedToken>(&bytes).ok())
             && cached.scope == TokenScope::Write
+            && cached.minted_for == self.config.credential_id()
             && fresh(&cached.expires_at, OffsetDateTime::now_utc())
         {
             return Ok(TokenIssued {
@@ -503,6 +548,9 @@ impl<'p> Cloud<'p> {
         ttl_secs: Option<u64>,
         session: Option<&SessionId>,
     ) -> Result<TokenIssued> {
+        if self.key.source == KeySource::Env {
+            self.verify_project().await?;
+        }
         let req = TokenRequest { repo, scope, session: session.map(|s| s.to_string()), ttl_secs };
         let issued = self.client.token(&req).await?;
         ensure!(!issued.token.is_empty(), "the Worker issued an empty token");
@@ -534,22 +582,56 @@ impl<'p> Cloud<'p> {
             .with_config("http.lowSpeedTime", "60"))
     }
 
-    /// The trusted branch (if it exists) and every attempt branch.
-    fn code_branches(&self) -> Result<Vec<String>> {
+    /// What a sync as `session` publishes. The human's: the trusted branch
+    /// and every attempt branch. An agent session's: only the attempt
+    /// branches its session family is bound to or holds, so every push is
+    /// attested by a session that owns what it pushes.
+    fn code_branches(&self, session: Option<&SessionId>) -> Result<Vec<String>> {
         let repo = self.project.repo();
-        let mut branches = Vec::new();
         let trusted = self.project.trusted_branch();
-        if repo.branch_exists(trusted)? {
-            branches.push(trusted.to_owned());
-        }
         let prefix = &self.project.manifest().workrooms.branch_prefix;
-        branches.extend(repo.branches_under(prefix)?.into_iter().filter(|b| b != trusted));
-        Ok(branches)
+        let attempts = repo.branches_under(prefix)?.into_iter().filter(|b| b != trusted);
+        let Some(me) = session else {
+            let mut branches = Vec::new();
+            if repo.branch_exists(trusted)? {
+                branches.push(trusted.to_owned());
+            }
+            branches.extend(attempts);
+            return Ok(branches);
+        };
+        let board = self.project.board()?;
+        let family = board.session_family(me);
+        let ours: HashSet<&str> = board
+            .attempts
+            .values()
+            .filter(|a| {
+                let holder = match &a.holder {
+                    Some(HandoffTarget::Session { session }) => Some(session),
+                    _ => None,
+                };
+                a.session.iter().chain(holder).any(|s| family.contains(s))
+            })
+            .map(|a| a.branch.as_str())
+            .collect();
+        Ok(attempts.filter(|b| ours.contains(b.as_str())).collect())
     }
 
     fn push(&self, remote: &RemoteSpec, branches: &[String]) -> Result<Vec<BranchPush>> {
         let refs: Vec<&str> = branches.iter().map(String::as_str).collect();
         gitbots_git::push_branches(self.project.repo(), remote, &refs)
+    }
+
+    /// Fast-forwards the trusted branch from `gitbots-main`, so a push or a
+    /// merge builds on what is hosted. `Err` says why it can't be used.
+    fn level_trusted(&self, main: &RemoteSpec) -> std::result::Result<(), String> {
+        let trusted = self.project.trusted_branch();
+        match gitbots_git::fast_forward_branch(self.project.repo(), main, trusted) {
+            Ok(Tracking::Diverged { .. }) => Err(format!(
+                "{trusted} has diverged from {MAIN_REMOTE}; merge or rebase it, then sync again"
+            )),
+            Ok(_) => Ok(()),
+            Err(e) => Err(format!("updating {trusted} from {MAIN_REMOTE}: {e:#}")),
+        }
     }
 
     // ---- sync -------------------------------------------------------------
@@ -597,15 +679,22 @@ impl<'p> Cloud<'p> {
             report.steward_skipped = Some("--no-push".into());
             return Ok(report);
         }
-        report.branches = self.push(&main, &self.code_branches()?)?;
-        if ctx.actor.is_human() {
-            match self.steward(&main).await {
+        let not_human = not_the_human(ctx);
+        if not_human.is_none()
+            && let Err(why) = self.level_trusted(&main)
+        {
+            report.warnings.push(why);
+        }
+        report.branches = self.push(&main, &self.code_branches(session)?)?;
+        match not_human {
+            None => match self.steward(&main).await {
                 Ok(steward) => report.steward = Some(steward),
                 Err(e) => report.warnings.push(format!("outbox not applied: {e:#}")),
+            },
+            Some(why) => {
+                report.steward_skipped =
+                    Some(format!("only the human's `gitbots sync` applies it: {why}"));
             }
-        } else {
-            report.steward_skipped =
-                Some("the outbox is applied by the human's `gitbots sync`, not an agent's".into());
         }
         match self.client.ingest().await {
             Ok(ingest) => report.ingest = Some(ingest),
@@ -614,25 +703,30 @@ impl<'p> Cloud<'p> {
         Ok(report)
     }
 
-    /// After a mutating command: sync `gitbots/activity` and push `branches`
-    /// as `session`.
+    /// After a mutating command: push `branches`, then sync
+    /// `gitbots/activity`, as `session`. Code first, so no event points at a
+    /// commit the hosted repo lacks.
     async fn quick_sync(
         &self,
         session: Option<&SessionId>,
         branches: &[String],
     ) -> Result<Vec<BranchPush>> {
         let main = self.remote(KnownRepo::Main, session).await?;
+        let pushed = self.push(&main, branches)?;
         let activity = &self.project.manifest().ledger.activity_branch;
         gitbots_git::sync_with(self.project.repo(), &[(activity.as_str(), &main)], true)?;
-        self.push(&main, branches)
+        Ok(pushed)
     }
 
     // ---- steward ----------------------------------------------------------
 
     /// Applies the dashboard's outbox as the human (`via: ui`), publishes
-    /// the result and acks each item. Items are recorded under the
-    /// idempotency key `outbox:<id>`, so an item applied but not acked (the
-    /// push or the ack failed) is acked, not applied again, next time.
+    /// the result and acks each item.
+    ///
+    /// Items are recorded under the idempotency key `outbox:<id>`: an item
+    /// applied but not acked (the push or the ack failed, or another steward
+    /// raced us) is acked, never applied twice. A failure that a retry can't
+    /// fix is acked as `{error}`; any other leaves the item pending.
     async fn steward(&self, main: &RemoteSpec) -> Result<StewardReport> {
         let pending = self.client.outbox().await?;
         let mut report = StewardReport::default();
@@ -640,39 +734,61 @@ impl<'p> Cloud<'p> {
             return Ok(report);
         }
         let human = self.project.human_via(Via::Ui)?;
+        let trusted = self.project.trusted_branch().to_owned();
+        let merges = pending.iter().any(|v| v["kind"] == "review" && v["body"]["merge"] == true);
+        let blocked = if merges { self.level_trusted(main).err() } else { None };
         let mut done: HashMap<String, EventId> = self
             .project
             .events()?
             .into_iter()
             .filter_map(|e| Some((e.idem.filter(|k| k.starts_with("outbox:"))?, e.id)))
             .collect();
+        // Never apply another project's decisions (a key from the env fits every repo).
+        self.verify_project().await?;
         for value in pending {
-            let outcome = self.apply_item(&human, value, main, &mut done);
+            let outcome = self.apply_item(&human, value, main, &mut done, blocked.as_deref());
             report.items.push(outcome);
         }
 
-        // Publish before acking: an acked decision must already be on gitbots-main.
-        let mut published = Ok(());
-        if report.items.iter().any(|i| i.event.is_some()) {
-            let activity = &self.project.manifest().ledger.activity_branch;
-            published =
-                gitbots_git::sync_with(self.project.repo(), &[(activity.as_str(), main)], true)
-                    .map(drop);
-        }
-        if published.is_ok() && report.items.iter().any(|i| i.merged.is_some()) {
-            let trusted = self.project.trusted_branch().to_owned();
-            match self.push(main, &[trusted]) {
-                Ok(pushes) => report.trusted = pushes.into_iter().next(),
-                Err(e) => report.warnings.push(format!("pushing the merge: {e:#}")),
+        // Publish before acking, the trusted branch first: an acked decision
+        // is on gitbots-main, and no `attempt.merged` there names a missing commit.
+        let mut trusted_ok = true;
+        if report.items.iter().any(|i| i.merged.is_some()) {
+            match self.push(main, std::slice::from_ref(&trusted)) {
+                Ok(mut pushes) => {
+                    let push = pushes.pop();
+                    trusted_ok = push
+                        .as_ref()
+                        .is_some_and(|p| !matches!(p.status, PushStatus::Rejected { .. }));
+                    report.trusted = push;
+                }
+                Err(e) => {
+                    trusted_ok = false;
+                    report.warnings.push(format!("pushing the merge: {e:#}"));
+                }
+            }
+            if !trusted_ok {
+                report
+                    .warnings
+                    .push(format!("merged items stay pending until {trusted} is on {MAIN_REMOTE}"));
             }
         }
-        if let Err(e) = &published {
-            report
-                .warnings
-                .push(format!("applied items stay pending until they are on {MAIN_REMOTE}: {e:#}"));
+        let mut published = true;
+        if report.items.iter().any(|i| i.event.is_some()) {
+            let activity = &self.project.manifest().ledger.activity_branch;
+            if let Err(e) =
+                gitbots_git::sync_with(self.project.repo(), &[(activity.as_str(), main)], true)
+            {
+                published = false;
+                report.warnings.push(format!(
+                    "applied items stay pending until they are on {MAIN_REMOTE}: {e:#}"
+                ));
+            }
         }
         for item in &mut report.items {
-            if !valid_id(&item.id) || (item.error.is_none() && published.is_err()) {
+            let unpublished =
+                item.event.is_some() && (!published || (item.merged.is_some() && !trusted_ok));
+            if !valid_id(&item.id) || item.retry || unpublished {
                 continue;
             }
             let ack = OutboxAck {
@@ -693,6 +809,7 @@ impl<'p> Cloud<'p> {
         value: Value,
         main: &RemoteSpec,
         done: &mut HashMap<String, EventId>,
+        blocked: Option<&str>,
     ) -> OutboxOutcome {
         let text = |k: &str| value.get(k).and_then(Value::as_str).unwrap_or_default().to_owned();
         let mut outcome = OutboxOutcome {
@@ -700,12 +817,21 @@ impl<'p> Cloud<'p> {
             kind: text("kind"),
             event: None,
             error: None,
+            retry: false,
             summary: String::new(),
             merged: None,
             acked: false,
         };
         if !valid_id(&outcome.id) {
             outcome.error = Some("outbox item without a usable id".into());
+            return outcome;
+        }
+        if !matches!(outcome.kind.as_str(), "task.create" | "review") {
+            outcome.error = Some(format!(
+                "unsupported kind `{}`: left pending for a newer gitbots",
+                outcome.kind
+            ));
+            outcome.retry = true;
             return outcome;
         }
         let idem = format!("outbox:{}", outcome.id);
@@ -715,8 +841,8 @@ impl<'p> Cloud<'p> {
             return outcome;
         }
         let applied = serde_json::from_value::<OutboxItem>(value)
-            .map_err(|e| anyhow!("unsupported outbox item: {e}"))
-            .and_then(|item| self.apply(human, &item, &idem, main));
+            .map_err(|e| permanent(format!("malformed outbox item: {e}")))
+            .and_then(|item| self.apply(human, &item, &idem, main, blocked));
         match applied {
             Ok(applied) => {
                 outcome.event = Some(applied.event.clone());
@@ -724,12 +850,23 @@ impl<'p> Cloud<'p> {
                 outcome.merged = applied.merged;
                 done.insert(idem, applied.event);
             }
-            Err(e) => {
+            // Decided, but the merge failed: final, the human merges by hand.
+            Err(e) if e.downcast_ref::<NotMerged>().is_some() => {
+                outcome.event = e.downcast_ref::<NotMerged>().map(|n| n.event.clone());
                 outcome.error = Some(format!("{e:#}"));
-                // A review whose merge failed is still decided: ack its event
-                // together with the error.
-                outcome.event = self.project.event_with_idem(&idem).ok().flatten();
             }
+            Err(e) => match self.project.event_with_idem(&idem) {
+                // Another steward applied it after our snapshot.
+                Ok(Some(event)) => {
+                    outcome.summary = "already applied".into();
+                    outcome.event = Some(event.clone());
+                    done.insert(idem, event);
+                }
+                _ => {
+                    outcome.retry = !is_permanent(&e);
+                    outcome.error = Some(format!("{e:#}"));
+                }
+            },
         }
         outcome
     }
@@ -740,16 +877,18 @@ impl<'p> Cloud<'p> {
         item: &OutboxItem,
         idem: &str,
         main: &RemoteSpec,
+        blocked: Option<&str>,
     ) -> Result<Applied> {
-        ensure!(
-            item.actor.is_human(),
-            "outbox items must come from a human, not {}",
-            item.actor.label()
-        );
+        if !item.actor.is_human() {
+            let who = item.actor.label();
+            return Err(permanent(format!("outbox items must come from a human, not {who}")));
+        }
         match &item.action {
             OutboxAction::TaskCreate(task) => {
                 let title = task.title.trim();
-                ensure!(!title.is_empty(), "title is required");
+                if title.is_empty() {
+                    return Err(permanent("title is required"));
+                }
                 let req = CreateTask {
                     title: title.to_owned(),
                     body: task.body.clone().filter(|b| !b.trim().is_empty()),
@@ -760,14 +899,32 @@ impl<'p> Cloud<'p> {
                 Ok(Applied { event, summary: format!("created task {task}"), merged: None })
             }
             OutboxAction::Review(review) => {
-                let attempt = review.attempt.as_deref().context("review item names no attempt")?;
+                let query = review
+                    .attempt
+                    .as_deref()
+                    .ok_or_else(|| permanent("review names no attempt"))?;
+                let board = self.project.board()?;
+                let attempt = board.find_attempt(query).map_err(|e| permanent(format!("{e:#}")))?;
+                if attempt.state != AttemptState::Submitted {
+                    return Err(permanent(format!(
+                        "attempt {} is {}; only submitted attempts can be reviewed",
+                        attempt.id,
+                        attempt.state.as_str()
+                    )));
+                }
                 if review.merge {
+                    if review.decision != ReviewDecision::Accept {
+                        return Err(permanent("merge only applies to accept"));
+                    }
+                    if let Some(why) = blocked {
+                        bail!("not reviewed yet, the merge has to wait: {why}");
+                    }
                     self.ensure_attempt_head(attempt, main)?;
                 }
                 let reason = review.reason.clone().filter(|r| !r.trim().is_empty());
                 let outcome = self.project.review_once(
                     human,
-                    attempt,
+                    query,
                     review.decision,
                     reason,
                     review.merge,
@@ -785,14 +942,12 @@ impl<'p> Cloud<'p> {
 
     /// Merging needs the attempt's head here; an agent on another machine
     /// only pushed it to `gitbots-main`.
-    fn ensure_attempt_head(&self, attempt: &str, main: &RemoteSpec) -> Result<()> {
+    fn ensure_attempt_head(&self, attempt: &AttemptView, main: &RemoteSpec) -> Result<()> {
         let repo = self.project.repo();
-        let board = self.project.board()?;
-        let view = board.find_attempt(attempt)?;
-        let Some(head) = &view.head else { return Ok(()) };
+        let Some(head) = &attempt.head else { return Ok(()) };
         let present = |head: &str| matches!(repo.resolve(head), Ok(Some(_)));
         if !present(head) {
-            gitbots_git::fetch_branch(repo, main, &view.branch)?;
+            gitbots_git::fetch_branch(repo, main, &attempt.branch)?;
             ensure!(
                 present(head),
                 "attempt head {} is neither here nor on {}",
@@ -809,9 +964,22 @@ impl<'p> Cloud<'p> {
     /// `session` (or the human), added as the plain remote `gitbots-fork-<id>`.
     pub async fn fork(&self, attempt: &str, session: Option<&SessionId>) -> Result<ForkReport> {
         let attempt = self.project.board()?.find_attempt(attempt)?.id.clone();
+        if self.key.source == KeySource::Env {
+            self.verify_project().await?;
+        }
         let req =
             ForkRequest { attempt: attempt.to_string(), session: session.map(|s| s.to_string()) };
-        let fork = self.client.fork(&req).await?;
+        // The Worker answers 409 while the fork is still being copied.
+        let mut tries = 0;
+        let fork = loop {
+            match self.client.fork(&req).await {
+                Err(e) if error_status(&e) == Some(409) && tries < 5 => {
+                    tries += 1;
+                    tokio::time::sleep(Duration::from_secs(2)).await;
+                }
+                done => break done?,
+            }
+        };
         let git_remote = format!("gitbots-fork-{}", attempt.short());
         set_remote(self.project.repo(), &git_remote, &fork.remote)?;
         let issued = TokenIssued {
@@ -823,6 +991,26 @@ impl<'p> Cloud<'p> {
         self.cache_token(&path, &issued, TokenScope::Write)?;
         Ok(ForkReport { attempt, git_remote, fork })
     }
+}
+
+/// A steward failure that a retry can't fix: acked as `{error}`.
+#[derive(Debug)]
+struct Permanent(String);
+
+impl fmt::Display for Permanent {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(&self.0)
+    }
+}
+
+impl std::error::Error for Permanent {}
+
+fn permanent(msg: impl Into<String>) -> anyhow::Error {
+    anyhow::Error::new(Permanent(msg.into()))
+}
+
+fn is_permanent(e: &anyhow::Error) -> bool {
+    e.downcast_ref::<Permanent>().is_some() || e.downcast_ref::<Refused>().is_some()
 }
 
 fn decision_label(d: ReviewDecision) -> &'static str {
@@ -870,6 +1058,9 @@ pub struct OutboxOutcome {
     pub event: Option<EventId>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub error: Option<String>,
+    /// Left pending: a later sync tries again.
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    pub retry: bool,
     pub summary: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub merged: Option<String>,
@@ -1026,19 +1217,23 @@ pub async fn init(project: &Project, url: &str, admin_key: Option<String>) -> Re
         ingest: None,
         warnings: vec![],
     };
-    if verified_only {
-        return Ok(report);
-    }
-
     let main = cloud.remote(KnownRepo::Main, None).await?;
-    let logs = cloud.remote(KnownRepo::Logs, None).await?;
     let ledger = &manifest.ledger;
+    if verified_only {
+        // A first run that provisioned but failed to publish left the hosted
+        // repo without a ledger: publish now instead of only verifying.
+        if gitbots_git::fetch_branch(repo, &main, &ledger.activity_branch)?.is_some() {
+            return Ok(report);
+        }
+        report.verified_only = false;
+    }
+    let logs = cloud.remote(KnownRepo::Logs, None).await?;
     report.ledgers = gitbots_git::sync_with(
         repo,
         &[(ledger.activity_branch.as_str(), &main), (ledger.logs_branch.as_str(), &logs)],
         true,
     )?;
-    report.branches = cloud.push(&main, &cloud.code_branches()?)?;
+    report.branches = cloud.push(&main, &cloud.code_branches(None)?)?;
     match cloud.client.ingest().await {
         Ok(ingest) => report.ingest = Some(ingest),
         Err(e) => report.warnings.push(format!("ingest: {e:#}")),
@@ -1086,7 +1281,15 @@ pub async fn status(project: &Project) -> Result<Status> {
     };
     status.key = Some(cloud.key.source.clone());
     match cloud.client.project().await {
-        Ok(info) => status.info = Some(info),
+        Ok(info) => {
+            if info.project_id != cloud.config.project {
+                status.errors.push(format!(
+                    "the owner key from {} belongs to project {}, but this repo is {}",
+                    cloud.key.source, info.project_id, cloud.config.project
+                ));
+            }
+            status.info = Some(info);
+        }
         Err(e) => status.errors.push(format!("{e:#}")),
     }
     match cloud.client.outbox().await {

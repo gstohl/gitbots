@@ -548,10 +548,11 @@ pub fn cloud_sync(out: &Out, r: &CloudSyncReport) -> Result<()> {
         if let Some(st) = &r.steward {
             for i in &st.items {
                 let what = match &i.error {
+                    Some(e) if i.retry => format!("left pending: {e}"),
                     Some(e) => format!("failed: {e}"),
                     None => i.summary.clone(),
                 };
-                let ack = if i.acked { "" } else { " (ack pending)" };
+                let ack = if i.acked || i.retry { "" } else { " (ack pending)" };
                 s += &format!("outbox {} {}: {what}{ack}\n", i.id, i.kind);
             }
             if let Some(p) = &st.trusted {

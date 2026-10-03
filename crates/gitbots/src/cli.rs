@@ -575,10 +575,12 @@ pub async fn run(cli: Cli) -> Result<()> {
             let outcome = project.review(&ctx, &a.attempt, decision, a.reason, a.merge)?;
             // A merge into the trusted branch is published too (fast-forward only).
             let mut branches = vec![];
-            if outcome.merged.is_some()
-                && project.board()?.attempts.get(&outcome.attempt).map(|x| x.base.as_str())
-                    == Some(project.trusted_branch())
-            {
+            // Best effort: the review is recorded, so this must not fail the command.
+            let into_trusted = || {
+                let board = project.board().ok()?;
+                Some(board.attempts.get(&outcome.attempt)?.base == project.trusted_branch())
+            };
+            if outcome.merged.is_some() && into_trusted() == Some(true) {
                 branches.push(project.trusted_branch().to_owned());
             }
             publish = job(&ctx, branches);
@@ -727,13 +729,10 @@ async fn cloud_command(
     };
     match cmd {
         CloudCmd::Init { url, admin_key_file } => {
-            // It publishes everything with the human's token.
+            // It provisions and publishes everything with the human's token.
             let ctx = project.resolve_actor(session)?;
-            if !ctx.actor.is_human() {
-                bail!(
-                    "`gitbots cloud init` runs as the human, not as agent session {}",
-                    ctx.actor.label()
-                );
+            if let Some(why) = cloud::not_the_human(&ctx) {
+                bail!("`gitbots cloud init` acts as the human: {why}");
             }
             let admin_key = match admin_key_file {
                 Some(path) => Some(

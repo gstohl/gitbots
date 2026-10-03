@@ -2,8 +2,10 @@
 //!
 //! A [`RemoteSpec`] names the remote and carries per-command git config for
 //! every command that talks to it (a hosted remote's `Authorization` header).
-//! That config only ever goes on the command line (`git -c key=value`):
-//! never into `.git/config`, and redacted from every error.
+//! That config only ever reaches git through the child's environment
+//! (`GIT_CONFIG_COUNT` / `GIT_CONFIG_KEY_<n>` / `GIT_CONFIG_VALUE_<n>`): never
+//! `.git/config`, never the command line (where `ps` shows it to every user),
+//! and it is redacted from every error.
 
 use std::fmt;
 use std::process::Command;
@@ -68,17 +70,28 @@ impl RemoteSpec {
         out
     }
 
-    /// `git -c ... <args>` where [`Repo::git`] runs, never prompting.
-    pub(crate) fn command(&self, repo: &Repo, args: &[&str]) -> Command {
-        let mut all: Vec<String> = Vec::with_capacity(self.config.len() * 2 + args.len());
-        for (key, value) in &self.config {
-            all.push("-c".into());
-            all.push(format!("{key}={value}"));
-        }
-        all.extend(args.iter().map(|a| (*a).to_owned()));
-        let mut cmd = repo.command(all);
+    /// `git <args>` where [`Repo::git`] runs, never prompting, with this
+    /// remote's config in the environment, after any `GIT_CONFIG_*` entries
+    /// the caller already set.
+    pub(crate) fn command(&self, repo: &Repo, args: &[&str]) -> Result<Command> {
+        let mut cmd = repo.command(args);
         cmd.env("GIT_TERMINAL_PROMPT", "0");
-        cmd
+        if self.config.is_empty() {
+            return Ok(cmd);
+        }
+        cli::require_version(2, 31, "passing a hosted remote's credentials via GIT_CONFIG_COUNT")?;
+        let inherited = cmd
+            .get_envs()
+            .find(|(k, _)| *k == "GIT_CONFIG_COUNT")
+            .map(|(_, v)| v.map(|v| v.to_owned()))
+            .unwrap_or_else(|| std::env::var_os("GIT_CONFIG_COUNT"));
+        let base: usize = inherited.and_then(|v| v.to_str()?.trim().parse().ok()).unwrap_or(0);
+        for (i, (key, value)) in self.config.iter().enumerate() {
+            cmd.env(format!("GIT_CONFIG_KEY_{}", base + i), key);
+            cmd.env(format!("GIT_CONFIG_VALUE_{}", base + i), value);
+        }
+        cmd.env("GIT_CONFIG_COUNT", (base + self.config.len()).to_string());
+        Ok(cmd)
     }
 }
 
@@ -165,7 +178,7 @@ pub fn fetch_branch(repo: &Repo, remote: &RemoteSpec, branch: &str) -> Result<Op
     let refspec = format!("+refs/heads/{branch}:{tracking}");
     let args = ["fetch", "-q", "--no-tags", "--no-write-fetch-head", remote.name(), &refspec];
     for round in 0..=LOCK_RETRIES {
-        let out = cli::output(remote.command(repo, &args))?;
+        let out = cli::output(remote.command(repo, &args)?)?;
         let stderr = String::from_utf8_lossy(&out.stderr);
         if out.status.success() {
             let tip = repo
@@ -185,6 +198,58 @@ pub fn fetch_branch(repo: &Repo, remote: &RemoteSpec, branch: &str) -> Result<Op
     unreachable!("the last round returns or bails")
 }
 
+/// Where a local branch stands against its remote counterpart, after
+/// [`fast_forward_branch`].
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Tracking {
+    /// The remote does not have the branch.
+    Missing,
+    UpToDate,
+    /// Local has commits the remote lacks; a push fast-forwards it.
+    Ahead,
+    /// Local was behind (or missing) and now matches the remote.
+    FastForwarded,
+    /// Both sides have commits the other lacks. Nothing was changed.
+    Diverged {
+        local: String,
+        remote: String,
+    },
+}
+
+/// Fetches `branch` from `remote` and fast-forwards the local branch when it
+/// is behind (creating it if missing). A local branch that is ahead is left
+/// for a push and a diverged one is only reported: nothing is merged or
+/// reset. A checked-out branch moves with `merge --ff-only` in its worktree
+/// so the files follow; otherwise the ref is compare-and-swapped.
+pub fn fast_forward_branch(repo: &Repo, remote: &RemoteSpec, branch: &str) -> Result<Tracking> {
+    let Some(theirs) = fetch_branch(repo, remote, branch)? else { return Ok(Tracking::Missing) };
+    let full = format!("refs/heads/{branch}");
+    let log = format!("gitbots: fast-forward {branch} from {}", remote.name());
+    let Some(ours) = repo.resolve(&full)? else {
+        // An empty old value: create, but never overwrite a concurrent one.
+        repo.git(&["update-ref", "-m", &log, &full, &theirs, ""])?;
+        return Ok(Tracking::FastForwarded);
+    };
+    if ours == theirs {
+        return Ok(Tracking::UpToDate);
+    }
+    if repo.is_ancestor(&theirs, &ours)? {
+        return Ok(Tracking::Ahead);
+    }
+    if !repo.is_ancestor(&ours, &theirs)? {
+        return Ok(Tracking::Diverged { local: ours, remote: theirs });
+    }
+    match repo.checked_out_in(branch)? {
+        Some(worktree) if worktree.is_dir() => {
+            repo.git_in(&worktree, &["merge", "-q", "--ff-only", &theirs])?;
+        }
+        _ => {
+            repo.git(&["update-ref", "-m", &log, &full, &theirs, &ours])?;
+        }
+    }
+    Ok(Tracking::FastForwarded)
+}
+
 /// `None` if pushed; `Some(reason)` if rejected in a way a re-fetch fixes.
 pub(crate) fn push_branch(
     repo: &Repo,
@@ -193,7 +258,7 @@ pub(crate) fn push_branch(
 ) -> Result<Option<String>> {
     let refspec = format!("refs/heads/{branch}:refs/heads/{branch}");
     let cmd =
-        remote.command(repo, &["push", "--porcelain", "--no-verify", remote.name(), &refspec]);
+        remote.command(repo, &["push", "--porcelain", "--no-verify", remote.name(), &refspec])?;
     let out = cli::output(cmd)?;
     if out.status.success() {
         return Ok(None);
@@ -260,7 +325,7 @@ pub fn push_branches(
         branches.iter().map(|b| format!("refs/heads/{b}:refs/heads/{b}")).collect();
     let mut args = vec!["push", "--porcelain", "--no-verify", remote.name()];
     args.extend(refspecs.iter().map(String::as_str));
-    let out = cli::output(remote.command(repo, &args))?;
+    let out = cli::output(remote.command(repo, &args)?)?;
     let stdout = String::from_utf8_lossy(&out.stdout);
     let mut results = Vec::with_capacity(branches.len());
     for (branch, refspec) in branches.iter().zip(&refspecs) {

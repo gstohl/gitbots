@@ -64,6 +64,8 @@ struct MockState {
     git: Vec<GitHit>,
     denied: usize,
     fail_tokens: usize,
+    /// Holds `GET /v1/project` until this many callers wait on it.
+    project_gate: Option<Arc<tokio::sync::Barrier>>,
     counter: u64,
 }
 
@@ -172,6 +174,11 @@ async fn create_project(
 }
 
 async fn project(State(s): State<Arc<Shared>>, headers: HeaderMap) -> Api<ProjectInfo> {
+    let gate = owner(&s, &headers)?.project_gate.clone();
+    if let Some(gate) = gate {
+        gate.wait().await;
+        s.state.lock().unwrap().project_gate = None;
+    }
     let st = owner(&s, &headers)?;
     Ok(Json(st.project.clone().unwrap()))
 }
@@ -459,6 +466,15 @@ impl World {
         String::from_utf8(out.stdout).unwrap().trim().to_owned()
     }
 
+    fn git_env(&self, dir: &Path, args: &[&str], env: &[(&str, &str)]) {
+        let mut cmd = Command::new("git");
+        cmd.current_dir(dir).args(args);
+        self.env(&mut cmd);
+        cmd.envs(env.iter().copied());
+        let out = cmd.output().unwrap();
+        assert!(out.status.success(), "git {args:?}: {}", String::from_utf8_lossy(&out.stderr));
+    }
+
     fn command(&self, dir: &Path, args: &[&str], env: &[(&str, &str)]) -> Command {
         let mut cmd = Command::new(env!("CARGO_BIN_EXE_gitbots"));
         cmd.current_dir(dir).args(args);
@@ -696,7 +712,7 @@ fn cloud_init_provisions_pushes_everything_and_is_idempotent() {
         mock.state().git.iter().rev().find(|h| h.push && h.repo.ends_with("-logs")).cloned();
     assert_eq!(logs_push.unwrap().session.as_deref(), Some(agent.as_str()));
     let err = w.gitbots_raw(&w.repo, &["cloud", "init", "--url", &mock.url], &env);
-    assert!(String::from_utf8_lossy(&err.stderr).contains("runs as the human"));
+    assert!(String::from_utf8_lossy(&err.stderr).contains("acts as the human"));
 
     let status = w.gitbots(&w.repo, &["cloud", "status"], &[]);
     assert_eq!(status["configured"], true);
@@ -962,5 +978,319 @@ fn watch_survives_transient_errors() {
     let round2: Value = serde_json::from_str(&round2).unwrap();
     assert!(round2["outbox"]["items"].as_array().unwrap().is_empty(), "{round2}");
     assert_eq!(mock.state().acks.len(), 1);
+    w.assert_no_token_leaks(&mock);
+}
+
+/// Moves the hosted trusted branch from another clone (`OTHER.md`).
+fn push_from_another_clone(w: &World, bare: &Path) {
+    let other = w.root.join("other");
+    w.git(&w.root, &["clone", "-q", bare.to_str().unwrap(), other.to_str().unwrap()]);
+    w.git(&other, &["config", "user.name", "someone"]);
+    w.git(&other, &["config", "user.email", "someone@example.com"]);
+    std::fs::write(other.join("OTHER.md"), "other\n").unwrap();
+    w.git(&other, &["add", "OTHER.md"]);
+    w.git(&other, &["commit", "-q", "-m", "other clone"]);
+    w.git(&other, &["push", "-q", "origin", "main"]);
+}
+
+fn review_item(id: &str, attempt: &str) -> Value {
+    json!({"id": id, "created_at": "2026-10-03T10:00:00Z", "kind": "review",
+        "body": {"attempt": attempt, "decision": "accept", "merge": true},
+        "actor": {"type": "human", "handle": "gstohl"}})
+}
+
+fn task_item(id: &str, title: &str) -> Value {
+    json!({"id": id, "created_at": "2026-10-03T10:00:00Z", "kind": "task.create",
+        "body": {"title": title}, "actor": {"type": "human", "handle": "gstohl"}})
+}
+
+#[test]
+fn steward_merges_onto_the_hosted_trusted_branch() {
+    let (w, mock) = World::cloud();
+    let agent = w.session("anthropic");
+    let (attempt, _) = submitted_attempt(&w, &agent);
+    let main = mock.bare("main");
+    push_from_another_clone(&w, &main);
+
+    mock.queue(json!([review_item("obx_merge", &attempt)]));
+    let sync = w.gitbots(&w.repo, &["sync"], &[]);
+    assert_eq!(sync["outbox"]["items"][0]["acked"], true, "{sync}");
+    // Local main followed the hosted one first, so the merge sits on top of it.
+    assert_eq!(w.git(&main, &["show", "main:hello.txt"]), "hello");
+    assert_eq!(w.git(&main, &["show", "main:OTHER.md"]), "other");
+    assert_eq!(w.git(&main, &["rev-parse", "main"]), w.git(&w.repo, &["rev-parse", "main"]));
+    let acks = mock.state().acks.clone();
+    assert!(acks[0].1.event.is_some() && acks[0].1.error.is_none(), "{acks:?}");
+    w.assert_no_token_leaks(&mock);
+}
+
+#[test]
+fn steward_leaves_what_a_retry_can_fix_pending() {
+    let (w, mock) = World::cloud();
+    let agent = w.session("anthropic");
+    let (attempt, _) = submitted_attempt(&w, &agent);
+    let main = mock.bare("main");
+    // Hosted and local main diverge.
+    push_from_another_clone(&w, &main);
+    std::fs::write(w.repo.join("LOCAL.md"), "local\n").unwrap();
+    w.git(&w.repo, &["add", "LOCAL.md"]);
+    w.git(&w.repo, &["commit", "-q", "-m", "local"]);
+
+    mock.queue(json!([
+        {"id": "obx_new", "created_at": "2026-10-03T10:00:00Z", "kind": "task.delete",
+         "body": {"task": "tsk_x"}, "actor": {"type": "human", "handle": "gstohl"}},
+        review_item("obx_gone", "att_nope"),
+        review_item("obx_merge", &attempt),
+        task_item("obx_task", "Still created"),
+    ]));
+    let out = w.gitbots_raw(&w.repo, &["--json", "sync"], &[]);
+    assert!(out.status.success(), "{}", String::from_utf8_lossy(&out.stderr));
+    let sync: Value = serde_json::from_slice(&out.stdout).unwrap();
+    assert!(sync["warnings"].to_string().contains("diverged"), "{sync}");
+    let items: HashMap<String, Value> = sync["outbox"]["items"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|i| (s(&i["id"]), i.clone()))
+        .collect();
+    // An unknown kind and a merge onto a diverged main wait; the rest is final.
+    for pending in ["obx_new", "obx_merge"] {
+        assert_eq!(
+            (&items[pending]["retry"], &items[pending]["acked"]),
+            (&json!(true), &json!(false))
+        );
+    }
+    assert!(items["obx_gone"]["error"].is_string() && items["obx_gone"]["acked"] == true);
+    assert!(items["obx_task"]["event"].is_string() && items["obx_task"]["acked"] == true);
+    let acked: Vec<String> = mock.state().acks.iter().map(|(id, _)| id.clone()).collect();
+    assert_eq!(acked, ["obx_gone", "obx_task"]);
+    let state = w.gitbots(&w.repo, &["attempt", "show", &attempt], &[]);
+    assert_eq!(state["attempt"]["state"], "submitted");
+
+    // Once main is reconciled, the next sync merges; the unknown kind still waits.
+    w.git(&w.repo, &["merge", "-q", "--no-edit", "refs/remotes/gitbots-main/main"]);
+    let sync = w.gitbots(&w.repo, &["sync"], &[]);
+    assert_eq!(sync["outbox"]["items"].as_array().unwrap().len(), 2, "{sync}");
+    for file in ["hello.txt", "OTHER.md", "LOCAL.md"] {
+        w.git(&main, &["show", &format!("main:{file}")]);
+    }
+    let pending: Vec<Value> = mock.state().outbox.clone();
+    assert_eq!(pending.len(), 1);
+    assert_eq!(pending[0]["id"], "obx_new");
+    w.assert_no_token_leaks(&mock);
+}
+
+#[test]
+fn concurrent_stewards_apply_each_item_once() {
+    let (w, mock) = World::cloud();
+    let agent = w.session("anthropic");
+    let (attempt, _) = submitted_attempt(&w, &agent);
+    mock.queue(json!([
+        task_item("obx_t1", "Raced one"),
+        task_item("obx_t2", "Raced two"),
+        review_item("obx_merge", &attempt),
+        task_item("obx_t3", "Raced three"),
+    ]));
+    // Both stewards check the project (after their snapshot of what is
+    // applied) before either applies anything: they race on every item.
+    mock.state().project_gate = Some(Arc::new(tokio::sync::Barrier::new(2)));
+    std::thread::scope(|scope| {
+        let runs: Vec<_> = (0..2)
+            .map(|_| scope.spawn(|| w.gitbots_raw(&w.repo, &["--json", "sync"], &[])))
+            .collect();
+        for run in runs {
+            let out = run.join().unwrap();
+            assert!(out.status.success(), "{}", String::from_utf8_lossy(&out.stderr));
+            // Each steward acks every item as a success, whoever applied it.
+            let sync: Value = serde_json::from_slice(&out.stdout).unwrap();
+            for item in sync["outbox"]["items"].as_array().unwrap() {
+                assert!(item["error"].is_null() && item["acked"] == true, "{item}");
+            }
+        }
+    });
+
+    let events = w.gitbots(&w.repo, &["log", "-n", "500"], &[]);
+    let count =
+        |kind: &str| events.as_array().unwrap().iter().filter(|e| e["kind"] == kind).count();
+    assert_eq!(count("review.decided"), 1);
+    assert_eq!(count("attempt.merged"), 1);
+    let tasks = w.gitbots(&w.repo, &["task", "list"], &[]);
+    for title in ["Raced one", "Raced two", "Raced three"] {
+        assert_eq!(tasks.as_array().unwrap().iter().filter(|t| t["title"] == title).count(), 1);
+    }
+    // Every ack is a success, and both stewards name the same event.
+    let mut by_item: HashMap<String, Vec<String>> = HashMap::new();
+    for (id, ack) in mock.state().acks.clone() {
+        assert!(ack.error.is_none(), "{id}: {ack:?}");
+        by_item.entry(id).or_default().push(ack.event.expect("event"));
+    }
+    assert_eq!(by_item.len(), 4);
+    for (id, events) in &by_item {
+        assert!(events.windows(2).all(|p| p[0] == p[1]), "{id}: {events:?}");
+    }
+    assert_eq!(w.git(&mock.bare("main"), &["show", "main:hello.txt"]), "hello");
+}
+
+#[test]
+fn an_agent_harness_without_a_session_acts_as_one_session_of_its_own() {
+    let (w, mock) = World::cloud();
+    let human_mints = mock.token_requests_for(None);
+    let seen = mock.state().git.len();
+    let harness = [("CLAUDECODE", "1")];
+
+    // Two commands in a row in the main worktree: one session, started once.
+    let out = w.gitbots_raw(&w.repo, &["--json", "task", "create", "from a harness"], &harness);
+    let stderr = String::from_utf8_lossy(&out.stderr).into_owned();
+    assert!(out.status.success() && stderr.contains("started ses_"), "{stderr}");
+    let task = s(&serde_json::from_slice::<Value>(&out.stdout).unwrap()["task"]);
+    let out = w.gitbots_raw(&w.repo, &["--json", "report", "still me"], &harness);
+    assert!(out.status.success() && !String::from_utf8_lossy(&out.stderr).contains("started"));
+    let who = w.gitbots(&w.repo, &["whoami"], &harness);
+    assert_eq!(who["via"], "env");
+    let auto = s(&who["actor"]["session"]);
+    let sessions = w.gitbots(&w.repo, &["session", "list"], &[]);
+    let labels: Vec<&Value> =
+        sessions.as_array().unwrap().iter().map(|v| &v["session"]["label"]).collect();
+    assert_eq!(labels, [&json!("auto: CLAUDECODE")], "{sessions}");
+
+    // A commit there carries the same session in its trailers.
+    std::fs::write(w.repo.join("harness.txt"), "x\n").unwrap();
+    w.git(&w.repo, &["add", "harness.txt"]);
+    w.git_env(&w.repo, &["commit", "-q", "-m", "harness commit"], &harness);
+    let message = w.git(&w.repo, &["log", "-1", "--format=%B"]);
+    assert!(message.contains(&format!("Gitbots-Session: {auto}")), "{message}");
+
+    // Events, minted tokens and pushes all name it; the human's token is never used.
+    let events = w.gitbots(&w.repo, &["log", "-n", "50"], &[]);
+    let events = events.as_array().unwrap();
+    let created = events.iter().find(|e| e["data"]["task"] == task.as_str()).unwrap();
+    let report = events.iter().find(|e| e["data"]["title"] == "still me").unwrap();
+    let commit = events.iter().find(|e| e["kind"] == "commit.recorded").unwrap();
+    for e in [created, report, commit] {
+        assert_eq!(e["actor"]["session"], auto.as_str(), "{e}");
+    }
+    assert_eq!((&created["via"], &report["via"]), (&json!("env"), &json!("env")));
+    let st = mock.state();
+    let minted: Vec<_> = st.token_requests.iter().filter_map(|r| r.session.clone()).collect();
+    assert_eq!(minted, std::slice::from_ref(&auto));
+    let pushes: Vec<&GitHit> = st.git[seen..].iter().filter(|h| h.push).collect();
+    assert!(
+        !pushes.is_empty() && pushes.iter().all(|h| h.session.as_deref() == Some(auto.as_str()))
+    );
+    drop(st);
+    assert_eq!(mock.token_requests_for(None), human_mints);
+    let remote = remote_events(&w, &mock.bare("main"));
+    assert_eq!(remote.iter().filter(|p| p.contains(&format!("/{auto}/"))).count(), 3);
+
+    // The human in the same worktree is still the human.
+    assert_eq!(w.gitbots(&w.repo, &["whoami"], &[])["actor"]["type"], "human");
+    // A workroom's binding wins over the auto-started session.
+    let bound = w.session("openai");
+    let room = w.gitbots(&w.repo, &["attempt", "start", &task], &[("GITBOTS_SESSION", &bound)]);
+    let room = PathBuf::from(s(&room["workroom"]));
+    let who = w.gitbots(&room, &["whoami"], &harness);
+    assert_eq!((&who["via"], &who["actor"]["session"]), (&json!("worktree"), &json!(bound)));
+
+    // What acts as the human refuses: the outbox stays pending, init is refused.
+    mock.queue(json!([task_item("obx_human", "Only for the human")]));
+    let sync = w.gitbots(&w.repo, &["sync"], &harness);
+    assert!(s(&sync["outbox_skipped"]).contains("CLAUDECODE"), "{sync}");
+    assert_eq!(mock.state().outbox.len(), 1);
+    let err = w.gitbots_raw(&w.repo, &["cloud", "init", "--url", &mock.url], &harness);
+    let stderr = String::from_utf8_lossy(&err.stderr);
+    assert!(!err.status.success() && stderr.contains("acts as the human"), "{stderr}");
+    assert_eq!(mock.token_requests_for(None), human_mints);
+
+    // Another agent, or the same one after its session ended, gets a new session.
+    let other = w.gitbots(&w.repo, &["whoami"], &[("CLAUDECODE", "1"), ("GITBOTS_MODEL", "other")]);
+    assert_ne!(other["actor"]["session"], auto.as_str());
+    let again = s(&w.gitbots(&w.repo, &["whoami"], &harness)["actor"]["session"]);
+    assert_ne!(again, auto);
+    w.gitbots(&w.repo, &["session", "end"], &harness);
+    assert_ne!(w.gitbots(&w.repo, &["whoami"], &harness)["actor"]["session"], again.as_str());
+    w.assert_no_token_leaks(&mock);
+}
+
+#[test]
+fn an_agent_sync_pushes_only_its_family_attempts() {
+    let (w, mock) = World::cloud();
+    w.git(&w.repo, &["config", "gitbots.cloud.autoSync", "false"]);
+    let a = w.session("anthropic");
+    let b = w.session("openai");
+    let sub = s(&w.gitbots(
+        &w.repo,
+        &["session", "start", "--provider", "anthropic", "--model", "small", "--client", "test"],
+        &[("GITBOTS_SESSION", &a)],
+    )["id"]);
+    let work = |session: &str, title: &str| {
+        let task = s(&w.gitbots(&w.repo, &["task", "create", title], &[])["task"]);
+        let info =
+            w.gitbots(&w.repo, &["attempt", "start", &task], &[("GITBOTS_SESSION", session)]);
+        let room = PathBuf::from(s(&info["workroom"]));
+        std::fs::write(room.join(format!("{title}.txt")), "x\n").unwrap();
+        w.git(&room, &["add", "."]);
+        w.git(&room, &["commit", "-q", "-m", title]);
+        (s(&info["attempt"]), s(&info["branch"]))
+    };
+    let (_, by_sub) = work(&sub, "sub");
+    let (y, by_b) = work(&b, "bee");
+    std::fs::write(w.repo.join("MAIN.md"), "human\n").unwrap();
+    w.git(&w.repo, &["add", "MAIN.md"]);
+    w.git(&w.repo, &["commit", "-q", "-m", "human work on main"]);
+    let main = mock.bare("main");
+    let hosted = |branch: &str| !w.git(&main, &["branch", "--list", branch]).is_empty();
+    let hosted_main = || w.git(&main, &["rev-parse", "main"]);
+    let before = hosted_main();
+
+    // a's sync pushes its subagent's attempt, not b's, and not the human's main.
+    w.gitbots(&w.repo, &["sync"], &[("GITBOTS_SESSION", &a)]);
+    assert!(hosted(&by_sub) && !hosted(&by_b));
+    assert_eq!(hosted_main(), before);
+    let pushers: Vec<_> =
+        mock.state().git.iter().filter(|h| h.push).map(|h| h.session.clone()).collect();
+    assert_eq!(pushers.last().unwrap().as_deref(), Some(a.as_str()));
+
+    // A handoff makes b's attempt a's to push.
+    w.gitbots(&w.repo, &["handoff", &y, "--to-session", &a], &[("GITBOTS_SESSION", &b)]);
+    w.gitbots(&w.repo, &["sync"], &[("GITBOTS_SESSION", &a)]);
+    assert!(hosted(&by_b));
+
+    // The human's sync pushes everything.
+    let (_, by_b2) = work(&b, "bee two");
+    w.gitbots(&w.repo, &["sync"], &[]);
+    assert!(hosted(&by_b2));
+    assert_eq!(hosted_main(), w.git(&w.repo, &["rev-parse", "main"]));
+    w.assert_no_token_leaks(&mock);
+}
+
+#[test]
+fn cloud_init_publishes_on_a_rerun_after_a_failed_first_publish() {
+    let w = World::new();
+    let mock = Mock::start(&w.root.join("artifacts"), &w.gitconfig);
+    w.gitbots(&w.repo, &["init", "--commit"], &[]);
+    // Provisioned, then the Worker hiccups before anything is pushed.
+    mock.state().fail_tokens = 1;
+    let out = w.gitbots_raw(
+        &w.repo,
+        &["cloud", "init", "--url", &mock.url],
+        &[("GITBOTS_ADMIN_KEY", ADMIN)],
+    );
+    assert!(!out.status.success());
+    let main = mock.bare("main");
+    assert!(w.git(&main, &["branch", "--list", "gitbots/activity"]).is_empty());
+
+    let again = w.gitbots(&w.repo, &["cloud", "init", "--url", &mock.url], &[]);
+    assert_eq!(
+        (&again["created"], &again["verified_only"]),
+        (&json!(false), &json!(false)),
+        "{again}"
+    );
+    assert_eq!(
+        w.git(&main, &["rev-parse", "gitbots/activity"]),
+        w.git(&w.repo, &["rev-parse", "gitbots/activity"])
+    );
+    // Once published, a rerun only verifies.
+    let third = w.gitbots(&w.repo, &["cloud", "init", "--url", &mock.url], &[]);
+    assert_eq!(third["verified_only"], true);
     w.assert_no_token_leaks(&mock);
 }
