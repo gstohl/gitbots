@@ -71,8 +71,9 @@ CREATE TABLE outbox (
   body            TEXT NOT NULL,             -- JSON
   actor           TEXT NOT NULL,             -- JSON gitbots_core::Actor (human)
   status          TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'done', 'failed')),
-  event           TEXT,                      -- ack: resulting ledger event id
-  error           TEXT,                      -- ack: why it could not be applied
+  event           TEXT,                      -- ledger event that recorded the decision
+  last_error      TEXT,                      -- ack error; may come with `event` (e.g. the
+                                             -- review was recorded but the merge failed)
   acked_at        TEXT
 );
 CREATE INDEX outbox_pending ON outbox(project_id, status, id);

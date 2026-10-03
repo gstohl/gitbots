@@ -4,3 +4,8 @@
 /.wrangler
 /node_modules
 /.tools
+
+.dev.vars*
+!.dev.vars.example
+.env*
+!.env.example

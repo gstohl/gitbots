@@ -45,6 +45,19 @@ pub struct OutboxRow {
     pub status: String,
 }
 
+/// An outbox item the steward acked with an error.
+#[derive(Clone, Debug, Deserialize, serde::Serialize)]
+pub struct OutboxError {
+    pub id: String,
+    pub kind: String,
+    /// `done` (decision recorded, e.g. only the merge failed) or `failed`.
+    pub status: String,
+    pub event: Option<String>,
+    #[serde(rename(serialize = "error"))]
+    pub last_error: String,
+    pub acked_at: Option<String>,
+}
+
 #[derive(Deserialize)]
 struct Count {
     n: f64,
@@ -366,7 +379,10 @@ impl Db {
         .await
     }
 
-    /// Marks a pending item applied (`event`) or failed (`error`).
+    /// Records the steward's ack: `event` (the decision is in the ledger)
+    /// and/or `error` (it could not be applied, or applied with a failed
+    /// merge). With an event the item is `done` even if there is an error,
+    /// which stays visible as `last_error`. Later acks are no-ops.
     pub async fn ack_outbox(
         &self,
         project: &str,
@@ -374,14 +390,46 @@ impl Db {
         event: Option<&str>,
         error: Option<&str>,
     ) -> Result<()> {
-        let status = if error.is_some() && event.is_none() { "failed" } else { "done" };
         self.stmt(
-            "UPDATE outbox SET status = ?3, event = ?4, error = ?5, acked_at = ?6 \
-             WHERE project_id = ?1 AND id = ?2 AND status = 'pending'",
-            &[s(project), s(id), s(status), o(event), o(error), s(&now_rfc3339())],
+            "UPDATE outbox SET event = coalesce(?3, event), last_error = ?4, acked_at = ?5, \
+             status = CASE WHEN coalesce(?3, event) IS NOT NULL THEN 'done' \
+                           WHEN ?4 IS NOT NULL THEN 'failed' ELSE 'done' END \
+             WHERE project_id = ?1 AND id = ?2 AND acked_at IS NULL",
+            &[s(project), s(id), o(event), o(error), s(&now_rfc3339())],
         )?
         .run()
         .await?;
         Ok(())
+    }
+
+    /// Marks items applied whose event the indexer found in `<prj>`
+    /// (`idem: "outbox:<id>"`), in case the steward's ack was lost.
+    pub async fn mark_applied(&self, project: &str, applied: &[(&str, &str)]) -> Result<()> {
+        let stmts = applied
+            .iter()
+            .map(|(item, event)| {
+                self.stmt(
+                    "UPDATE outbox SET status = 'done', event = coalesce(event, ?3) \
+                     WHERE project_id = ?1 AND id = ?2 AND status = 'pending'",
+                    &[s(project), s(item), s(event)],
+                )
+            })
+            .collect::<Result<Vec<_>>>()?;
+        if !stmts.is_empty() {
+            self.0.batch(stmts).await?;
+        }
+        Ok(())
+    }
+
+    /// The latest acked items that carry an error, newest first.
+    pub async fn outbox_errors(&self, project: &str, limit: u32) -> Result<Vec<OutboxError>> {
+        self.stmt(
+            "SELECT id, kind, status, event, last_error, acked_at FROM outbox \
+             WHERE project_id = ?1 AND last_error IS NOT NULL ORDER BY id DESC LIMIT ?2",
+            &[s(project), JsValue::from_f64(f64::from(limit))],
+        )?
+        .all()
+        .await?
+        .results()
     }
 }

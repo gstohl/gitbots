@@ -23,6 +23,9 @@ pub const LOGS_BRANCH: &str = "gitbots/logs";
 const EVENTS_DIR: &str = "events";
 /// Blobs read concurrently.
 const READ_CONCURRENCY: usize = 8;
+/// Events the steward applies from the hosted outbox carry the idempotency
+/// key `outbox:<outbox item id>`.
+pub const OUTBOX_IDEM_PREFIX: &str = "outbox:";
 /// Ids per [`EventStore::known`] call (D1 binds at most 100 parameters).
 const KNOWN_CHUNK: usize = 50;
 
@@ -107,6 +110,8 @@ pub struct IndexedEvent {
     pub task: Option<String>,
     /// The attempt the event names directly.
     pub attempt: Option<String>,
+    /// The event's idempotency key, if it has one.
+    pub idem: Option<String>,
     /// The actor claims to be a human. Forks (pushed by agents) may not
     /// contribute such events.
     pub human: bool,
@@ -136,11 +141,19 @@ pub fn parse_event_file(file: &EventFile, bytes: &[u8]) -> Result<IndexedEvent, 
         session: event.actor.session().map(ToString::to_string),
         task: event.body.task().map(ToString::to_string),
         attempt: event.body.attempt().map(ToString::to_string),
+        idem: event.idem.clone(),
         human: event.actor.is_human(),
         path: file.path.clone(),
         blob: file.blob.clone(),
         json: text.trim_end().to_owned(),
     })
+}
+
+impl IndexedEvent {
+    /// The outbox item this event applied (`idem: "outbox:<id>"`), if any.
+    pub fn outbox_item(&self) -> Option<&str> {
+        self.idem.as_deref()?.strip_prefix(OUTBOX_IDEM_PREFIX).filter(|id| !id.is_empty())
+    }
 }
 
 /// Where indexing of one repo stands: the activity commit and its root tree.
@@ -373,6 +386,17 @@ mod tests {
             block_on(index_commit(&repo, &MemStore::default(), &c, &Checkpoint::default(), 9))
                 .unwrap();
         assert!(out.complete && out.new_events == 0);
+    }
+
+    #[test]
+    fn outbox_items() {
+        let mut e = event(0).with_idem("outbox:obx_01K");
+        let file = EventFile { path: event_path(&e), blob: "b".into() };
+        let parsed = parse_event_file(&file, &serde_json::to_vec(&e).unwrap()).unwrap();
+        assert_eq!(parsed.outbox_item(), Some("obx_01K"));
+        e.idem = Some("commit:abc".into());
+        let parsed = parse_event_file(&file, &serde_json::to_vec(&e).unwrap()).unwrap();
+        assert_eq!(parsed.outbox_item(), None);
     }
 
     #[test]

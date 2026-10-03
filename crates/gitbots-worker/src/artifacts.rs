@@ -35,6 +35,10 @@ extern "C" {
     fn info(this: &RepoSys) -> Result<Promise, JsValue>;
     #[wasm_bindgen(method, catch, js_name = createToken)]
     fn create_token(this: &RepoSys, scope: &str, ttl: f64) -> Result<Promise, JsValue>;
+    #[wasm_bindgen(method, catch, js_name = listTokens)]
+    fn list_tokens(this: &RepoSys) -> Result<Promise, JsValue>;
+    #[wasm_bindgen(method, catch, js_name = revokeToken)]
+    fn revoke_token(this: &RepoSys, token_or_id: &str) -> Result<Promise, JsValue>;
     #[wasm_bindgen(method, catch)]
     fn fork(this: &RepoSys, name: &str, opts: &JsValue) -> Result<Promise, JsValue>;
     #[wasm_bindgen(method, catch)]
@@ -278,6 +282,16 @@ impl Repo {
         #[allow(clippy::cast_precision_loss)]
         let ttl = ttl_secs as f64;
         decode("createToken result", call(self.sys.create_token(scope, ttl)).await?)
+    }
+
+    /// Raw `listTokens()` result, for diagnostics.
+    pub async fn tokens_raw(&self) -> Res<JsValue> {
+        call(self.sys.list_tokens()).await
+    }
+
+    /// Revokes a token by plaintext or id; `false` if there was none.
+    pub async fn revoke_token(&self, token_or_id: &str) -> Res<bool> {
+        Ok(call(self.sys.revoke_token(token_or_id)).await?.as_bool().unwrap_or(false))
     }
 
     pub async fn fork(&self, name: &str, description: &str) -> Res<CreatedRepo> {

@@ -16,7 +16,7 @@ use crate::artifacts::{CreatedRepo, Repo};
 use crate::db::{OutboxRow, ProjectRow, RepoRow};
 use crate::http::{ApiError, ApiResult, bearer, body, json_response, ok};
 use crate::indexer::{index_repo, indexable_repos};
-use crate::util::{now_rfc3339, random_bytes, rfc3339_from_unix};
+use crate::util::{now_rfc3339, random_bytes};
 
 /// Artifacts token TTL bounds and default, in seconds.
 const TTL_MIN: u64 = 60;
@@ -60,7 +60,10 @@ async fn create_or_adopt(
     branch: &str,
 ) -> ApiResult<String> {
     match ctx.artifacts.create(name, description, branch).await {
-        Ok(CreatedRepo { remote, .. }) => Ok(remote),
+        Ok(CreatedRepo { remote, token, .. }) => {
+            revoke_creation_token(ctx, name, &token).await;
+            Ok(remote)
+        }
         Err(e) if e.is("ALREADY_EXISTS") => {
             ctx.artifacts.get(name).await?;
             Ok(ctx.remote(name))
@@ -174,10 +177,50 @@ pub async fn tokens(ctx: &Ctx, p: &ProjectRow, mut req: Request) -> ApiResult<Re
     ok(&TokenIssued { token, expires_at, remote: ctx.remote(&name) })
 }
 
-/// Expiry encoded in a repo creation token (`art_...?expires=<unix>`), if any.
-fn token_expiry(token: &str) -> Option<String> {
-    let secs = token.split_once("?expires=")?.1.parse::<u64>().ok()?;
-    Some(rfc3339_from_unix(secs))
+/// `create()` and `fork()` return a write token that no session holds.
+/// Nobody needs it (tokens are minted per session), so revoke it.
+async fn revoke_creation_token(ctx: &Ctx, repo: &str, token: &str) {
+    let revoked = match ctx.artifacts.get(repo).await {
+        Ok(handle) => handle.revoke_token(token).await,
+        Err(e) => Err(e),
+    };
+    if let Err(e) = revoked {
+        worker::console_warn!("{repo}: revoking the creation token: {e}");
+    }
+}
+
+/// How long `POST /v1/forks` waits for a fresh fork to become usable.
+const FORK_WAIT_MS: u64 = 10_000;
+const FORK_POLL_MS: u64 = 500;
+
+/// Mints a session write token on a fork, waiting while Artifacts is still
+/// copying it (`FORK_IN_PROGRESS`).
+async fn mint_on_fork(
+    ctx: &Ctx,
+    p: &ProjectRow,
+    name: &str,
+    session: Option<&str>,
+) -> ApiResult<(String, String)> {
+    let mut waited = 0;
+    loop {
+        let minted = match ctx.artifacts.get(name).await {
+            Ok(handle) => mint(ctx, p, &handle, true, session, TTL_DEFAULT).await,
+            Err(e) => Err(ApiError::from(e)),
+        };
+        match minted {
+            Err(e) if e.status == 409 && waited < FORK_WAIT_MS => {
+                worker::Delay::from(std::time::Duration::from_millis(FORK_POLL_MS)).await;
+                waited += FORK_POLL_MS;
+            }
+            Err(e) if e.status == 409 => {
+                return Err(ApiError::conflict(format!(
+                    "fork {name} is still being created; retry POST /v1/forks ({})",
+                    e.message
+                )));
+            }
+            other => return other,
+        }
+    }
 }
 
 /// `POST /v1/forks`: fork `<prj>` into `<prj>-<attempt short>` (all
@@ -191,13 +234,12 @@ pub async fn forks(ctx: &Ctx, p: &ProjectRow, mut req: Request) -> ApiResult<Res
     let existing = ctx.db.fork_for_attempt(&p.id, attempt.as_str()).await?;
     let name =
         existing.as_ref().map_or_else(|| naming::fork_repo(&p.repo, &attempt), |r| r.name.clone());
-    let mut initial_token = None;
     if existing.is_none() {
         let main = ctx.artifacts.get(&p.repo).await?;
         let description = format!("gitbots: {} attempt {attempt}", p.name);
         let remote = match main.fork(&name, &description).await {
             Ok(created) => {
-                initial_token = Some(created.token);
+                revoke_creation_token(ctx, &name, &created.token).await;
                 created.remote
             }
             Err(e) if e.is("ALREADY_EXISTS") => ctx.remote(&name),
@@ -218,23 +260,9 @@ pub async fn forks(ctx: &Ctx, p: &ProjectRow, mut req: Request) -> ApiResult<Res
             .await?;
         crate::subscribe::subscribe_pushes(ctx, &name).await;
     }
-    let minted = match ctx.artifacts.get(&name).await {
-        Ok(handle) => mint(ctx, p, &handle, true, session.as_deref(), TTL_DEFAULT).await,
-        Err(e) => Err(ApiError::from(e)),
-    };
-    let (token, expires_at) = match minted {
-        Ok(t) => t,
-        // The fork may still be copying (FORK_IN_PROGRESS); the token that
-        // came with it works meanwhile.
-        Err(e) if e.status == 409 => match initial_token {
-            Some(token) => {
-                let expires = token_expiry(&token).unwrap_or_default();
-                (token, expires)
-            }
-            None => return Err(e),
-        },
-        Err(e) => return Err(e),
-    };
+    // Always a fresh token recorded against the session: pushes to the
+    // fork are attested by it.
+    let (token, expires_at) = mint_on_fork(ctx, p, &name, session.as_deref()).await?;
     ok(&ForkCreated { repo: name.clone(), remote: ctx.remote(&name), token, expires_at })
 }
 

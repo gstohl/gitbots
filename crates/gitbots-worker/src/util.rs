@@ -29,13 +29,6 @@ pub fn now_rfc3339() -> String {
     js_sys::Date::new_0().to_iso_string().into()
 }
 
-/// RFC 3339 for a Unix timestamp in seconds.
-pub fn rfc3339_from_unix(secs: u64) -> String {
-    #[allow(clippy::cast_precision_loss)]
-    let ms = (secs as f64) * 1000.0;
-    js_sys::Date::new(&JsValue::from_f64(ms)).to_iso_string().into()
-}
-
 pub fn new_ulid() -> Ulid {
     let r = random_bytes::<16>();
     Ulid::from_parts(now_ms(), u128::from_le_bytes(r))

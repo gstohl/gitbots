@@ -126,7 +126,12 @@ async fn inspect(ctx: &Ctx, req: &Request) -> ApiResult<Response> {
         logs.insert(spelling.clone(), raw(repo.log_raw(&spelling, 1).await));
     }
     let tip = repo.tip(&reference).await?;
-    let mut out = json!({ "info": raw(repo.info_raw().await), "log": logs, "tip": tip });
+    let mut out = json!({
+        "info": raw(repo.info_raw().await),
+        "tokens": raw(repo.tokens_raw().await),
+        "log": logs,
+        "tip": tip,
+    });
     if let Some(tip) = tip {
         let by_sha = raw(repo.log_raw(&tip, 1).await);
         out["log_by_sha"] = by_sha;

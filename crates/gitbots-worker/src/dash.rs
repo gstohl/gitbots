@@ -86,7 +86,10 @@ async fn project(ctx: &Ctx, p: &ProjectRow) -> ApiResult<Response> {
         ))
     })?;
     let pending = ctx.db.count_pending(&p.id).await?;
-    ok(&dashboard::project_json(&at, PRODUCER, pending)?)
+    let mut body = dashboard::project_json(&at, PRODUCER, pending)?;
+    // Hosted only: the steward's recent ack errors (newest first, max 10).
+    body["outbox_errors"] = serde_json::to_value(ctx.db.outbox_errors(&p.id, 10).await?)?;
+    ok(&body)
 }
 
 async fn events(ctx: &Ctx, p: &ProjectRow, url: &Url) -> ApiResult<Response> {

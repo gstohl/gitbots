@@ -37,6 +37,14 @@ impl EventStore for D1Store<'_> {
             .upsert_events(self.project, self.repo, self.primary, &kept)
             .await
             .map_err(|e| e.to_string())?;
+        // Decisions the steward applied from the outbox: done, even if the
+        // ack never arrived. (Fork events never count; they hold no human
+        // events.)
+        if self.primary {
+            let applied: Vec<(&str, &str)> =
+                kept.iter().filter_map(|e| Some((e.outbox_item()?, e.id.as_str()))).collect();
+            self.db.mark_applied(self.project, &applied).await.map_err(|e| e.to_string())?;
+        }
         Ok(u32::try_from(kept.len()).unwrap_or(u32::MAX))
     }
 }
