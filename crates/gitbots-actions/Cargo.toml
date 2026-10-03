@@ -1,0 +1,33 @@
+[package]
+name = "gitbots-actions"
+description = "Workflow engine for gitbots: workflow spec, job planner and runners (local, Celesto)."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[features]
+default = ["celesto"]
+# Hosted runner on Celesto computers (https://celesto.ai); pulls in an HTTP client.
+celesto = ["dep:reqwest"]
+
+[dependencies]
+gitbots-core.workspace = true
+anyhow.workspace = true
+reqwest = { workspace = true, optional = true, features = ["json", "rustls"] }
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+toml.workspace = true
+
+[target.'cfg(unix)'.dependencies]
+nix = { workspace = true, features = ["signal"] }
+
+[dev-dependencies]
+tempfile.workspace = true
+tokio = { workspace = true, features = ["net"] }
+
+[lints]
+workspace = true

@@ -1,0 +1,271 @@
+{
+  "attempt": {
+    "base": "integration",
+    "base_commit": "f201916c3a267ade0aeb1532d244ebc9fcfed4cf",
+    "branch": "gitbots/attempt/add-token-auth-middleware-5hya26",
+    "checks_passed": false,
+    "diff": {
+      "deletions": 0,
+      "files": 1,
+      "insertions": 3
+    },
+    "head": "9e6e1ffb5972e60cf6f91a46ede042123d1e923d",
+    "holder": null,
+    "id": "att_01M40M11BNH1CFSTFH8C5HYA26",
+    "merged_commit": null,
+    "review": null,
+    "runs": [
+      {
+        "commit": "9e6e1ffb5972e60cf6f91a46ede042123d1e923d",
+        "run": "run_01M40M11K67BPDN95H84FR25G4",
+        "status": "failure",
+        "workflow": "ci"
+      }
+    ],
+    "session": "ses_01M40M111Y3ER013F0Y4CPDT75",
+    "started_at": "2026-10-03T10:12:48.162823Z",
+    "started_by": {
+      "agent": {
+        "client": "codex",
+        "model": "gpt-5-codex",
+        "provider": "openai"
+      },
+      "session": "ses_01M40M111Y3ER013F0Y4CPDT75",
+      "type": "agent"
+    },
+    "state": "submitted",
+    "submitted_by": {
+      "agent": {
+        "client": "codex",
+        "model": "gpt-5-codex",
+        "provider": "openai"
+      },
+      "session": "ses_01M40M111Y3ER013F0Y4CPDT75",
+      "type": "agent"
+    },
+    "summary": "bearer token check (stub)",
+    "task": "tsk_01M40M117YXRC7FV40SB51SBFW",
+    "updated_at": "2026-10-03T10:12:48.373024Z"
+  },
+  "commits": [
+    {
+      "sha": "9e6e1ffb5972e60cf6f91a46ede042123d1e923d",
+      "subject": "Add auth middleware",
+      "trailers": [
+        [
+          "Gitbots-Session",
+          "ses_01M40M111Y3ER013F0Y4CPDT75"
+        ],
+        [
+          "Gitbots-Provider",
+          "openai"
+        ],
+        [
+          "Gitbots-Model",
+          "gpt-5-codex"
+        ],
+        [
+          "Gitbots-Client",
+          "codex"
+        ]
+      ]
+    }
+  ],
+  "events": [
+    {
+      "actor": {
+        "agent": {
+          "client": "codex",
+          "model": "gpt-5-codex",
+          "provider": "openai"
+        },
+        "session": "ses_01M40M111Y3ER013F0Y4CPDT75",
+        "type": "agent"
+      },
+      "data": {
+        "attempt": "att_01M40M11BNH1CFSTFH8C5HYA26",
+        "base": "integration",
+        "base_commit": "f201916c3a267ade0aeb1532d244ebc9fcfed4cf",
+        "branch": "gitbots/attempt/add-token-auth-middleware-5hya26",
+        "session": "ses_01M40M111Y3ER013F0Y4CPDT75",
+        "task": "tsk_01M40M117YXRC7FV40SB51SBFW"
+      },
+      "id": "evt_01M40M11D2X0W1ACKC1ATYNJBZ",
+      "kind": "attempt.started",
+      "producer": "gitbots/0.1.0",
+      "ts": "2026-10-03T10:12:48.162823Z",
+      "v": 1,
+      "via": "env"
+    },
+    {
+      "actor": {
+        "agent": {
+          "client": "codex",
+          "model": "gpt-5-codex",
+          "provider": "openai"
+        },
+        "session": "ses_01M40M111Y3ER013F0Y4CPDT75",
+        "type": "agent"
+      },
+      "data": {
+        "attempt": "att_01M40M11BNH1CFSTFH8C5HYA26",
+        "branch": "gitbots/attempt/add-token-auth-middleware-5hya26",
+        "diff": {
+          "deletions": 0,
+          "files": 1,
+          "insertions": 3
+        },
+        "sha": "9e6e1ffb5972e60cf6f91a46ede042123d1e923d",
+        "subject": "Add auth middleware"
+      },
+      "id": "evt_01M40M11G3XTV8W55M6N8PZQB7",
+      "idem": "commit:9e6e1ffb5972e60cf6f91a46ede042123d1e923d",
+      "kind": "commit.recorded",
+      "producer": "gitbots/0.1.0",
+      "ts": "2026-10-03T10:12:48.259679Z",
+      "v": 1,
+      "via": "worktree"
+    },
+    {
+      "actor": {
+        "agent": {
+          "client": "codex",
+          "model": "gpt-5-codex",
+          "provider": "openai"
+        },
+        "session": "ses_01M40M111Y3ER013F0Y4CPDT75",
+        "type": "agent"
+      },
+      "data": {
+        "attempt": "att_01M40M11BNH1CFSTFH8C5HYA26",
+        "diff": {
+          "deletions": 0,
+          "files": 1,
+          "insertions": 3
+        },
+        "head": "9e6e1ffb5972e60cf6f91a46ede042123d1e923d",
+        "mandate": "3a386abf87f55b117ab0c15ebaf5ee1b8bfbc556",
+        "summary": "bearer token check (stub)"
+      },
+      "id": "evt_01M40M11HZQA4NF92MEWXXM4ZC",
+      "kind": "attempt.submitted",
+      "producer": "gitbots/0.1.0",
+      "ts": "2026-10-03T10:12:48.320224Z",
+      "v": 1,
+      "via": "worktree"
+    },
+    {
+      "actor": {
+        "component": "actions",
+        "type": "system"
+      },
+      "data": {
+        "attempt": "att_01M40M11BNH1CFSTFH8C5HYA26",
+        "commit": "9e6e1ffb5972e60cf6f91a46ede042123d1e923d",
+        "duration_ms": 14,
+        "jobs": [
+          {
+            "duration_ms": 4,
+            "exit_code": 1,
+            "failed_step": "no TODOs",
+            "log": {
+              "branch": "gitbots/logs",
+              "path": "runs/2026/10/03/run_01M40M11K67BPDN95H84FR25G4/lint.log"
+            },
+            "name": "lint",
+            "status": "failure"
+          },
+          {
+            "duration_ms": 0,
+            "log": {
+              "branch": "gitbots/logs",
+              "path": "runs/2026/10/03/run_01M40M11K67BPDN95H84FR25G4/test.log"
+            },
+            "name": "test",
+            "status": "skipped"
+          }
+        ],
+        "run": "run_01M40M11K67BPDN95H84FR25G4",
+        "runner": "local",
+        "status": "failure",
+        "trigger": "attempt.submitted",
+        "workflow": "ci"
+      },
+      "id": "evt_01M40M11KM7CAV2YKXYZEMY5WT",
+      "kind": "action.completed",
+      "producer": "gitbots/0.1.0",
+      "ts": "2026-10-03T10:12:48.373024Z",
+      "v": 1,
+      "via": "system"
+    }
+  ],
+  "runs": [
+    {
+      "attempt": "att_01M40M11BNH1CFSTFH8C5HYA26",
+      "commit": "9e6e1ffb5972e60cf6f91a46ede042123d1e923d",
+      "duration_ms": 14,
+      "jobs": [
+        {
+          "duration_ms": 4,
+          "exit_code": 1,
+          "failed_step": "no TODOs",
+          "log": {
+            "branch": "gitbots/logs",
+            "path": "runs/2026/10/03/run_01M40M11K67BPDN95H84FR25G4/lint.log"
+          },
+          "name": "lint",
+          "status": "failure"
+        },
+        {
+          "duration_ms": 0,
+          "log": {
+            "branch": "gitbots/logs",
+            "path": "runs/2026/10/03/run_01M40M11K67BPDN95H84FR25G4/test.log"
+          },
+          "name": "test",
+          "status": "skipped"
+        }
+      ],
+      "run": "run_01M40M11K67BPDN95H84FR25G4",
+      "runner": "local",
+      "status": "failure",
+      "trigger": "attempt.submitted",
+      "workflow": "ci"
+    }
+  ],
+  "session_chain": [
+    {
+      "agent": {
+        "client": "codex",
+        "model": "gpt-5-codex",
+        "provider": "openai"
+      },
+      "id": "ses_01M40M111Y3ER013F0Y4CPDT75",
+      "operator": "gstohl",
+      "role": "implementer",
+      "started_at": "2026-10-03T10:12:47.822126Z"
+    }
+  ],
+  "task": {
+    "attempts": [
+      "att_01M40M11BNH1CFSTFH8C5HYA26",
+      "att_01M40M11NKNN21B64WM03DDN0P"
+    ],
+    "body": null,
+    "created_at": "2026-10-03T10:12:47.999237Z",
+    "created_by": {
+      "email": "dominik@example.com",
+      "handle": "gstohl",
+      "type": "human"
+    },
+    "id": "tsk_01M40M117YXRC7FV40SB51SBFW",
+    "labels": [
+      "security"
+    ],
+    "recipe": null,
+    "status": "in_progress",
+    "title": "Add token auth middleware"
+  },
+  "violations": [],
+  "workroom": "/private/tmp/claude-501/-Users-dominik-Documents-riwork-SantoshXGstohl/1532846c-0e49-4371-9ddb-f09e6a5ba8b0/scratchpad/demo2/gitbots-home/workrooms/prj_01M40M10FQ7TDCJ2HT6NJ83K96/add-token-auth-middleware-5hya26"
+}

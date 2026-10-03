@@ -1,0 +1,73 @@
+{
+  "can_decide": false,
+  "manifest": {
+    "ledger": {
+      "activity_branch": "gitbots/activity",
+      "logs_branch": "gitbots/logs"
+    },
+    "mandate": {
+      "agents": {
+        "allowed_paths": [
+          "**"
+        ],
+        "denied_paths": [
+          ".gitbots/**",
+          ".github/**",
+          "**/.claude/**",
+          "**/.codex/**",
+          "**/.cursor/**",
+          "**/.mcp.json",
+          "**/CLAUDE.md",
+          "**/AGENTS.md"
+        ],
+        "protected_branches": [
+          "main",
+          "master"
+        ]
+      },
+      "approvals": {
+        "accept_attempt": "any",
+        "change_mandate": "owner",
+        "merge_protected": "maintainer",
+        "run_hosted_action": "maintainer"
+      },
+      "autonomy": "assisted",
+      "goal": "Ship v1 of the shop API with agents doing the work",
+      "principals": [
+        {
+          "email": "dominik@example.com",
+          "handle": "gstohl",
+          "role": "owner"
+        }
+      ]
+    },
+    "project": {
+      "id": "prj_01M40M10FQ7TDCJ2HT6NJ83K96",
+      "name": "repo"
+    },
+    "tenancy": {
+      "owner": {
+        "handle": "gstohl",
+        "kind": "user"
+      },
+      "team": null,
+      "workspace": null
+    },
+    "version": 1,
+    "workrooms": {
+      "branch_prefix": "gitbots/attempt"
+    }
+  },
+  "manifest_source": {
+    "branch": "main",
+    "oid": "3a386abf87f55b117ab0c15ebaf5ee1b8bfbc556",
+    "type": "trusted"
+  },
+  "producer": "gitbots/0.1.0",
+  "trusted_branch": "main",
+  "viewer": {
+    "email": "dominik@example.com",
+    "handle": "gstohl",
+    "type": "human"
+  }
+}

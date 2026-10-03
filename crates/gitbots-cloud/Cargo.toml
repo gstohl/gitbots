@@ -1,0 +1,21 @@
+[package]
+name = "gitbots-cloud"
+description = "Shared, IO-free pieces of gitbots's Cloudflare control plane: /v1 API types and the ledger indexing logic. Builds for wasm32."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+gitbots-core.workspace = true
+futures-util.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+similar.workspace = true
+thiserror.workspace = true
+time.workspace = true
+
+[lints]
+workspace = true

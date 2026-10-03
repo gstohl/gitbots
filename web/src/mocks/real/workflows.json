@@ -1,0 +1,57 @@
+{
+  "invalid": [],
+  "workflows": [
+    {
+      "path": ".gitbots/actions/ci.toml",
+      "workflow": {
+        "env": {},
+        "jobs": {
+          "lint": {
+            "env": {},
+            "needs": [],
+            "runs-on": "local",
+            "steps": [
+              {
+                "continue-on-error": false,
+                "env": {},
+                "name": "no TODOs",
+                "run": "! grep -rn TODO src/",
+                "workdir": null
+              }
+            ],
+            "timeout-secs": null
+          },
+          "test": {
+            "env": {},
+            "needs": [
+              "lint"
+            ],
+            "runs-on": "local",
+            "steps": [
+              {
+                "continue-on-error": false,
+                "env": {},
+                "name": "compile",
+                "run": "python3 -m py_compile src/*.py",
+                "workdir": null
+              },
+              {
+                "continue-on-error": false,
+                "env": {},
+                "name": "smoke",
+                "run": "python3 -c 'import sys; sys.path.insert(0, \"src\"); import app; assert app.health()[\"ok\"]'",
+                "workdir": null
+              }
+            ],
+            "timeout-secs": null
+          }
+        },
+        "name": "ci",
+        "on": [
+          "attempt.submitted",
+          "manual"
+        ]
+      }
+    }
+  ]
+}

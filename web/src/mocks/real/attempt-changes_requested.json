@@ -1,0 +1,335 @@
+{
+  "attempt": {
+    "base": "integration",
+    "base_commit": "f201916c3a267ade0aeb1532d244ebc9fcfed4cf",
+    "branch": "gitbots/attempt/add-a-shopping-cart-endpoint-2ks709",
+    "checks_passed": true,
+    "diff": {
+      "deletions": 0,
+      "files": 1,
+      "insertions": 3
+    },
+    "head": "98d5cfa602447e1a59f5f17bc5b91248abc17b24",
+    "holder": {
+      "session": "ses_01M40M113DFX5J1RPCBT5JQ27B",
+      "type": "session"
+    },
+    "id": "att_01M40M11BNECYD50GFK62KS709",
+    "merged_commit": null,
+    "review": {
+      "at": "2026-10-03T10:12:49.012827Z",
+      "by": {
+        "agent": {
+          "client": "chatgpt",
+          "model": "gpt-5",
+          "provider": "openai"
+        },
+        "session": "ses_01M40M114S0Z2BZG3VNC48EY1A",
+        "type": "agent"
+      },
+      "decision": "changes_requested",
+      "reason": "remove_item is missing"
+    },
+    "runs": [
+      {
+        "commit": "98d5cfa602447e1a59f5f17bc5b91248abc17b24",
+        "run": "run_01M40M11JNPY57X8D53ET1D48Z",
+        "status": "success",
+        "workflow": "ci"
+      }
+    ],
+    "session": "ses_01M40M110HQMHC78JWCVSE4ECG",
+    "started_at": "2026-10-03T10:12:48.162821Z",
+    "started_by": {
+      "agent": {
+        "client": "claude-code",
+        "model": "claude-opus-5-5",
+        "provider": "anthropic"
+      },
+      "session": "ses_01M40M110HQMHC78JWCVSE4ECG",
+      "type": "agent"
+    },
+    "state": "changes_requested",
+    "submitted_by": {
+      "agent": {
+        "client": "claude-code",
+        "model": "claude-opus-5-5",
+        "provider": "anthropic"
+      },
+      "session": "ses_01M40M110HQMHC78JWCVSE4ECG",
+      "type": "agent"
+    },
+    "summary": "cart add/remove with quantities",
+    "task": "tsk_01M40M116KDPNJ18R2WQN0MKSP",
+    "updated_at": "2026-10-03T10:12:49.066253Z"
+  },
+  "commits": [
+    {
+      "sha": "98d5cfa602447e1a59f5f17bc5b91248abc17b24",
+      "subject": "Add cart endpoint",
+      "trailers": [
+        [
+          "Gitbots-Session",
+          "ses_01M40M110HQMHC78JWCVSE4ECG"
+        ],
+        [
+          "Gitbots-Provider",
+          "anthropic"
+        ],
+        [
+          "Gitbots-Model",
+          "claude-opus-5-5"
+        ],
+        [
+          "Gitbots-Client",
+          "claude-code"
+        ]
+      ]
+    }
+  ],
+  "events": [
+    {
+      "actor": {
+        "agent": {
+          "client": "claude-code",
+          "model": "claude-opus-5-5",
+          "provider": "anthropic"
+        },
+        "session": "ses_01M40M110HQMHC78JWCVSE4ECG",
+        "type": "agent"
+      },
+      "data": {
+        "attempt": "att_01M40M11BNECYD50GFK62KS709",
+        "base": "integration",
+        "base_commit": "f201916c3a267ade0aeb1532d244ebc9fcfed4cf",
+        "branch": "gitbots/attempt/add-a-shopping-cart-endpoint-2ks709",
+        "session": "ses_01M40M110HQMHC78JWCVSE4ECG",
+        "task": "tsk_01M40M116KDPNJ18R2WQN0MKSP"
+      },
+      "id": "evt_01M40M11D2CJ3P2ZJ4Z80YYTF0",
+      "kind": "attempt.started",
+      "producer": "gitbots/0.1.0",
+      "ts": "2026-10-03T10:12:48.162821Z",
+      "v": 1,
+      "via": "env"
+    },
+    {
+      "actor": {
+        "agent": {
+          "client": "claude-code",
+          "model": "claude-opus-5-5",
+          "provider": "anthropic"
+        },
+        "session": "ses_01M40M110HQMHC78JWCVSE4ECG",
+        "type": "agent"
+      },
+      "data": {
+        "attempt": "att_01M40M11BNECYD50GFK62KS709",
+        "branch": "gitbots/attempt/add-a-shopping-cart-endpoint-2ks709",
+        "diff": {
+          "deletions": 0,
+          "files": 1,
+          "insertions": 3
+        },
+        "sha": "98d5cfa602447e1a59f5f17bc5b91248abc17b24",
+        "subject": "Add cart endpoint"
+      },
+      "id": "evt_01M40M11FQ4FVXFFC0558MJ5YH",
+      "idem": "commit:98d5cfa602447e1a59f5f17bc5b91248abc17b24",
+      "kind": "commit.recorded",
+      "producer": "gitbots/0.1.0",
+      "ts": "2026-10-03T10:12:48.24864Z",
+      "v": 1,
+      "via": "worktree"
+    },
+    {
+      "actor": {
+        "agent": {
+          "client": "claude-code",
+          "model": "claude-opus-5-5",
+          "provider": "anthropic"
+        },
+        "session": "ses_01M40M110HQMHC78JWCVSE4ECG",
+        "type": "agent"
+      },
+      "data": {
+        "attempt": "att_01M40M11BNECYD50GFK62KS709",
+        "diff": {
+          "deletions": 0,
+          "files": 1,
+          "insertions": 3
+        },
+        "head": "98d5cfa602447e1a59f5f17bc5b91248abc17b24",
+        "mandate": "3a386abf87f55b117ab0c15ebaf5ee1b8bfbc556",
+        "summary": "cart add/remove with quantities"
+      },
+      "id": "evt_01M40M11HDJ8WGJD83229B4HYT",
+      "kind": "attempt.submitted",
+      "producer": "gitbots/0.1.0",
+      "ts": "2026-10-03T10:12:48.302249Z",
+      "v": 1,
+      "via": "worktree"
+    },
+    {
+      "actor": {
+        "component": "actions",
+        "type": "system"
+      },
+      "data": {
+        "attempt": "att_01M40M11BNECYD50GFK62KS709",
+        "commit": "98d5cfa602447e1a59f5f17bc5b91248abc17b24",
+        "duration_ms": 62,
+        "jobs": [
+          {
+            "duration_ms": 4,
+            "exit_code": 0,
+            "log": {
+              "branch": "gitbots/logs",
+              "path": "runs/2026/10/03/run_01M40M11JNPY57X8D53ET1D48Z/lint.log"
+            },
+            "name": "lint",
+            "status": "success"
+          },
+          {
+            "duration_ms": 46,
+            "exit_code": 0,
+            "log": {
+              "branch": "gitbots/logs",
+              "path": "runs/2026/10/03/run_01M40M11JNPY57X8D53ET1D48Z/test.log"
+            },
+            "name": "test",
+            "status": "success"
+          }
+        ],
+        "run": "run_01M40M11JNPY57X8D53ET1D48Z",
+        "runner": "local",
+        "status": "success",
+        "trigger": "attempt.submitted",
+        "workflow": "ci"
+      },
+      "id": "evt_01M40M11MMYAWKZWHJFN5DQ4PM",
+      "kind": "action.completed",
+      "producer": "gitbots/0.1.0",
+      "ts": "2026-10-03T10:12:48.405499Z",
+      "v": 1,
+      "via": "system"
+    },
+    {
+      "actor": {
+        "agent": {
+          "client": "chatgpt",
+          "model": "gpt-5",
+          "provider": "openai"
+        },
+        "session": "ses_01M40M114S0Z2BZG3VNC48EY1A",
+        "type": "agent"
+      },
+      "data": {
+        "attempt": "att_01M40M11BNECYD50GFK62KS709",
+        "decision": "changes_requested",
+        "mandate": "3a386abf87f55b117ab0c15ebaf5ee1b8bfbc556",
+        "reason": "remove_item is missing"
+      },
+      "id": "evt_01M40M127M7WNECD6K517NP6W0",
+      "kind": "review.decided",
+      "producer": "gitbots/0.1.0",
+      "ts": "2026-10-03T10:12:49.012827Z",
+      "v": 1,
+      "via": "env"
+    },
+    {
+      "actor": {
+        "agent": {
+          "client": "claude-code",
+          "model": "claude-opus-5-5",
+          "provider": "anthropic"
+        },
+        "session": "ses_01M40M110HQMHC78JWCVSE4ECG",
+        "type": "agent"
+      },
+      "data": {
+        "attempt": "att_01M40M11BNECYD50GFK62KS709",
+        "note": "please add remove_item + tests",
+        "to": {
+          "session": "ses_01M40M113DFX5J1RPCBT5JQ27B",
+          "type": "session"
+        }
+      },
+      "id": "evt_01M40M1299BEFVKEAEFXA1NA3W",
+      "kind": "attempt.handoff",
+      "producer": "gitbots/0.1.0",
+      "ts": "2026-10-03T10:12:49.066253Z",
+      "v": 1,
+      "via": "env"
+    }
+  ],
+  "runs": [
+    {
+      "attempt": "att_01M40M11BNECYD50GFK62KS709",
+      "commit": "98d5cfa602447e1a59f5f17bc5b91248abc17b24",
+      "duration_ms": 62,
+      "jobs": [
+        {
+          "duration_ms": 4,
+          "exit_code": 0,
+          "log": {
+            "branch": "gitbots/logs",
+            "path": "runs/2026/10/03/run_01M40M11JNPY57X8D53ET1D48Z/lint.log"
+          },
+          "name": "lint",
+          "status": "success"
+        },
+        {
+          "duration_ms": 46,
+          "exit_code": 0,
+          "log": {
+            "branch": "gitbots/logs",
+            "path": "runs/2026/10/03/run_01M40M11JNPY57X8D53ET1D48Z/test.log"
+          },
+          "name": "test",
+          "status": "success"
+        }
+      ],
+      "run": "run_01M40M11JNPY57X8D53ET1D48Z",
+      "runner": "local",
+      "status": "success",
+      "trigger": "attempt.submitted",
+      "workflow": "ci"
+    }
+  ],
+  "session_chain": [
+    {
+      "agent": {
+        "client": "claude-code",
+        "model": "claude-opus-5-5",
+        "provider": "anthropic"
+      },
+      "id": "ses_01M40M110HQMHC78JWCVSE4ECG",
+      "label": "lead dev",
+      "operator": "gstohl",
+      "role": "implementer",
+      "started_at": "2026-10-03T10:12:47.775681Z"
+    }
+  ],
+  "task": {
+    "attempts": [
+      "att_01M40M11BNECYD50GFK62KS709"
+    ],
+    "body": null,
+    "created_at": "2026-10-03T10:12:47.956008Z",
+    "created_by": {
+      "email": "dominik@example.com",
+      "handle": "gstohl",
+      "type": "human"
+    },
+    "id": "tsk_01M40M116KDPNJ18R2WQN0MKSP",
+    "labels": [
+      "api"
+    ],
+    "recipe": null,
+    "status": "in_progress",
+    "title": "Add a shopping cart endpoint"
+  },
+  "violations": [],
+  "workroom": "/private/tmp/claude-501/-Users-dominik-Documents-riwork-SantoshXGstohl/1532846c-0e49-4371-9ddb-f09e6a5ba8b0/scratchpad/demo2/gitbots-home/workrooms/prj_01M40M10FQ7TDCJ2HT6NJ83K96/add-a-shopping-cart-endpoint-2ks709"
+}

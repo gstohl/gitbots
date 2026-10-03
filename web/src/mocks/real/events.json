@@ -1,0 +1,949 @@
+[
+  {
+    "actor": {
+      "email": "dominik@example.com",
+      "handle": "gstohl",
+      "type": "human"
+    },
+    "data": {
+      "name": "repo",
+      "project": "prj_01M40M10FQ7TDCJ2HT6NJ83K96"
+    },
+    "id": "evt_01M40M10XCV950T731H7P2JP3A",
+    "kind": "project.initialized",
+    "producer": "gitbots/0.1.0",
+    "ts": "2026-10-03T10:12:47.66049Z",
+    "v": 1,
+    "via": "git_config"
+  },
+  {
+    "actor": {
+      "agent": {
+        "client": "claude-code",
+        "model": "claude-opus-5-5",
+        "provider": "anthropic"
+      },
+      "session": "ses_01M40M110HQMHC78JWCVSE4ECG",
+      "type": "agent"
+    },
+    "data": {
+      "session": {
+        "agent": {
+          "client": "claude-code",
+          "model": "claude-opus-5-5",
+          "provider": "anthropic"
+        },
+        "id": "ses_01M40M110HQMHC78JWCVSE4ECG",
+        "label": "lead dev",
+        "operator": "gstohl",
+        "role": "implementer",
+        "started_at": "2026-10-03T10:12:47.775681Z"
+      }
+    },
+    "id": "evt_01M40M110ZWDE2S3R8R8QA62J4",
+    "kind": "session.started",
+    "producer": "gitbots/0.1.0",
+    "ts": "2026-10-03T10:12:47.776101Z",
+    "v": 1,
+    "via": "flag"
+  },
+  {
+    "actor": {
+      "agent": {
+        "client": "codex",
+        "model": "gpt-5-codex",
+        "provider": "openai"
+      },
+      "session": "ses_01M40M111Y3ER013F0Y4CPDT75",
+      "type": "agent"
+    },
+    "data": {
+      "session": {
+        "agent": {
+          "client": "codex",
+          "model": "gpt-5-codex",
+          "provider": "openai"
+        },
+        "id": "ses_01M40M111Y3ER013F0Y4CPDT75",
+        "operator": "gstohl",
+        "role": "implementer",
+        "started_at": "2026-10-03T10:12:47.822126Z"
+      }
+    },
+    "id": "evt_01M40M112E0ZHHYY6JMM8R8DXN",
+    "kind": "session.started",
+    "producer": "gitbots/0.1.0",
+    "ts": "2026-10-03T10:12:47.822605Z",
+    "v": 1,
+    "via": "flag"
+  },
+  {
+    "actor": {
+      "agent": {
+        "client": "claude-code",
+        "model": "claude-haiku-4-5",
+        "provider": "anthropic"
+      },
+      "parent": "ses_01M40M110HQMHC78JWCVSE4ECG",
+      "session": "ses_01M40M113DFX5J1RPCBT5JQ27B",
+      "type": "agent"
+    },
+    "data": {
+      "session": {
+        "agent": {
+          "client": "claude-code",
+          "model": "claude-haiku-4-5",
+          "provider": "anthropic"
+        },
+        "id": "ses_01M40M113DFX5J1RPCBT5JQ27B",
+        "label": "opus subagent",
+        "operator": "gstohl",
+        "parent": "ses_01M40M110HQMHC78JWCVSE4ECG",
+        "role": "tester",
+        "started_at": "2026-10-03T10:12:47.867492Z"
+      }
+    },
+    "id": "evt_01M40M113VME8Y54XZG8S3YP5Z",
+    "kind": "session.started",
+    "producer": "gitbots/0.1.0",
+    "ts": "2026-10-03T10:12:47.867981Z",
+    "v": 1,
+    "via": "flag"
+  },
+  {
+    "actor": {
+      "agent": {
+        "client": "chatgpt",
+        "model": "gpt-5",
+        "provider": "openai"
+      },
+      "session": "ses_01M40M114S0Z2BZG3VNC48EY1A",
+      "type": "agent"
+    },
+    "data": {
+      "session": {
+        "agent": {
+          "client": "chatgpt",
+          "model": "gpt-5",
+          "provider": "openai"
+        },
+        "id": "ses_01M40M114S0Z2BZG3VNC48EY1A",
+        "operator": "gstohl",
+        "role": "reviewer",
+        "started_at": "2026-10-03T10:12:47.91179Z"
+      }
+    },
+    "id": "evt_01M40M1157MGR7DWXVAFCF8ANQ",
+    "kind": "session.started",
+    "producer": "gitbots/0.1.0",
+    "ts": "2026-10-03T10:12:47.912313Z",
+    "v": 1,
+    "via": "flag"
+  },
+  {
+    "actor": {
+      "email": "dominik@example.com",
+      "handle": "gstohl",
+      "type": "human"
+    },
+    "data": {
+      "labels": [
+        "api"
+      ],
+      "task": "tsk_01M40M116KDPNJ18R2WQN0MKSP",
+      "title": "Add a shopping cart endpoint"
+    },
+    "id": "evt_01M40M116KDPNJ18R2WQN0MKSQ",
+    "kind": "task.created",
+    "producer": "gitbots/0.1.0",
+    "ts": "2026-10-03T10:12:47.956008Z",
+    "v": 1,
+    "via": "git_config"
+  },
+  {
+    "actor": {
+      "email": "dominik@example.com",
+      "handle": "gstohl",
+      "type": "human"
+    },
+    "data": {
+      "labels": [
+        "security"
+      ],
+      "task": "tsk_01M40M117YXRC7FV40SB51SBFW",
+      "title": "Add token auth middleware"
+    },
+    "id": "evt_01M40M117YXRC7FV40SB51SBFX",
+    "kind": "task.created",
+    "producer": "gitbots/0.1.0",
+    "ts": "2026-10-03T10:12:47.999237Z",
+    "v": 1,
+    "via": "git_config"
+  },
+  {
+    "actor": {
+      "email": "dominik@example.com",
+      "handle": "gstohl",
+      "type": "human"
+    },
+    "data": {
+      "labels": [
+        "docs"
+      ],
+      "task": "tsk_01M40M1198WD2G1BMM5DSFWTPY",
+      "title": "Document the API in README"
+    },
+    "id": "evt_01M40M1198WD2G1BMM5DSFWTPZ",
+    "kind": "task.created",
+    "producer": "gitbots/0.1.0",
+    "ts": "2026-10-03T10:12:48.041451Z",
+    "v": 1,
+    "via": "git_config"
+  },
+  {
+    "actor": {
+      "email": "dominik@example.com",
+      "handle": "gstohl",
+      "type": "human"
+    },
+    "data": {
+      "labels": [
+        "api"
+      ],
+      "task": "tsk_01M40M11AHRE6HSPXP2WQN2JF7",
+      "title": "Rate-limit the public endpoints"
+    },
+    "id": "evt_01M40M11AHRE6HSPXP2WQN2JF8",
+    "kind": "task.created",
+    "producer": "gitbots/0.1.0",
+    "ts": "2026-10-03T10:12:48.082239Z",
+    "v": 1,
+    "via": "git_config"
+  },
+  {
+    "actor": {
+      "agent": {
+        "client": "claude-code",
+        "model": "claude-opus-5-5",
+        "provider": "anthropic"
+      },
+      "session": "ses_01M40M110HQMHC78JWCVSE4ECG",
+      "type": "agent"
+    },
+    "data": {
+      "attempt": "att_01M40M11BNECYD50GFK62KS709",
+      "base": "integration",
+      "base_commit": "f201916c3a267ade0aeb1532d244ebc9fcfed4cf",
+      "branch": "gitbots/attempt/add-a-shopping-cart-endpoint-2ks709",
+      "session": "ses_01M40M110HQMHC78JWCVSE4ECG",
+      "task": "tsk_01M40M116KDPNJ18R2WQN0MKSP"
+    },
+    "id": "evt_01M40M11D2CJ3P2ZJ4Z80YYTF0",
+    "kind": "attempt.started",
+    "producer": "gitbots/0.1.0",
+    "ts": "2026-10-03T10:12:48.162821Z",
+    "v": 1,
+    "via": "env"
+  },
+  {
+    "actor": {
+      "agent": {
+        "client": "claude-code",
+        "model": "claude-haiku-4-5",
+        "provider": "anthropic"
+      },
+      "parent": "ses_01M40M110HQMHC78JWCVSE4ECG",
+      "session": "ses_01M40M113DFX5J1RPCBT5JQ27B",
+      "type": "agent"
+    },
+    "data": {
+      "attempt": "att_01M40M11BN2N7WM1Z23VYTYM9C",
+      "base": "integration",
+      "base_commit": "f201916c3a267ade0aeb1532d244ebc9fcfed4cf",
+      "branch": "gitbots/attempt/document-the-api-in-readme-ytym9c",
+      "session": "ses_01M40M113DFX5J1RPCBT5JQ27B",
+      "task": "tsk_01M40M1198WD2G1BMM5DSFWTPY"
+    },
+    "id": "evt_01M40M11D2HR5H0Z989JXCZX76",
+    "kind": "attempt.started",
+    "producer": "gitbots/0.1.0",
+    "ts": "2026-10-03T10:12:48.162818Z",
+    "v": 1,
+    "via": "env"
+  },
+  {
+    "actor": {
+      "agent": {
+        "client": "codex",
+        "model": "gpt-5-codex",
+        "provider": "openai"
+      },
+      "session": "ses_01M40M111Y3ER013F0Y4CPDT75",
+      "type": "agent"
+    },
+    "data": {
+      "attempt": "att_01M40M11BNH1CFSTFH8C5HYA26",
+      "base": "integration",
+      "base_commit": "f201916c3a267ade0aeb1532d244ebc9fcfed4cf",
+      "branch": "gitbots/attempt/add-token-auth-middleware-5hya26",
+      "session": "ses_01M40M111Y3ER013F0Y4CPDT75",
+      "task": "tsk_01M40M117YXRC7FV40SB51SBFW"
+    },
+    "id": "evt_01M40M11D2X0W1ACKC1ATYNJBZ",
+    "kind": "attempt.started",
+    "producer": "gitbots/0.1.0",
+    "ts": "2026-10-03T10:12:48.162823Z",
+    "v": 1,
+    "via": "env"
+  },
+  {
+    "actor": {
+      "agent": {
+        "client": "claude-code",
+        "model": "claude-opus-5-5",
+        "provider": "anthropic"
+      },
+      "session": "ses_01M40M110HQMHC78JWCVSE4ECG",
+      "type": "agent"
+    },
+    "data": {
+      "attempt": "att_01M40M11BNECYD50GFK62KS709",
+      "branch": "gitbots/attempt/add-a-shopping-cart-endpoint-2ks709",
+      "diff": {
+        "deletions": 0,
+        "files": 1,
+        "insertions": 3
+      },
+      "sha": "98d5cfa602447e1a59f5f17bc5b91248abc17b24",
+      "subject": "Add cart endpoint"
+    },
+    "id": "evt_01M40M11FQ4FVXFFC0558MJ5YH",
+    "idem": "commit:98d5cfa602447e1a59f5f17bc5b91248abc17b24",
+    "kind": "commit.recorded",
+    "producer": "gitbots/0.1.0",
+    "ts": "2026-10-03T10:12:48.24864Z",
+    "v": 1,
+    "via": "worktree"
+  },
+  {
+    "actor": {
+      "agent": {
+        "client": "claude-code",
+        "model": "claude-haiku-4-5",
+        "provider": "anthropic"
+      },
+      "parent": "ses_01M40M110HQMHC78JWCVSE4ECG",
+      "session": "ses_01M40M113DFX5J1RPCBT5JQ27B",
+      "type": "agent"
+    },
+    "data": {
+      "attempt": "att_01M40M11BN2N7WM1Z23VYTYM9C",
+      "branch": "gitbots/attempt/document-the-api-in-readme-ytym9c",
+      "diff": {
+        "deletions": 0,
+        "files": 1,
+        "insertions": 5
+      },
+      "sha": "51c5eceb8bcee5438189cc67b934ec0e5c17d728",
+      "subject": "Document endpoints"
+    },
+    "id": "evt_01M40M11FWKS2WJKB4XTM2KBWZ",
+    "idem": "commit:51c5eceb8bcee5438189cc67b934ec0e5c17d728",
+    "kind": "commit.recorded",
+    "producer": "gitbots/0.1.0",
+    "ts": "2026-10-03T10:12:48.253378Z",
+    "v": 1,
+    "via": "worktree"
+  },
+  {
+    "actor": {
+      "agent": {
+        "client": "codex",
+        "model": "gpt-5-codex",
+        "provider": "openai"
+      },
+      "session": "ses_01M40M111Y3ER013F0Y4CPDT75",
+      "type": "agent"
+    },
+    "data": {
+      "attempt": "att_01M40M11BNH1CFSTFH8C5HYA26",
+      "branch": "gitbots/attempt/add-token-auth-middleware-5hya26",
+      "diff": {
+        "deletions": 0,
+        "files": 1,
+        "insertions": 3
+      },
+      "sha": "9e6e1ffb5972e60cf6f91a46ede042123d1e923d",
+      "subject": "Add auth middleware"
+    },
+    "id": "evt_01M40M11G3XTV8W55M6N8PZQB7",
+    "idem": "commit:9e6e1ffb5972e60cf6f91a46ede042123d1e923d",
+    "kind": "commit.recorded",
+    "producer": "gitbots/0.1.0",
+    "ts": "2026-10-03T10:12:48.259679Z",
+    "v": 1,
+    "via": "worktree"
+  },
+  {
+    "actor": {
+      "agent": {
+        "client": "claude-code",
+        "model": "claude-opus-5-5",
+        "provider": "anthropic"
+      },
+      "session": "ses_01M40M110HQMHC78JWCVSE4ECG",
+      "type": "agent"
+    },
+    "data": {
+      "attempt": "att_01M40M11BNECYD50GFK62KS709",
+      "diff": {
+        "deletions": 0,
+        "files": 1,
+        "insertions": 3
+      },
+      "head": "98d5cfa602447e1a59f5f17bc5b91248abc17b24",
+      "mandate": "3a386abf87f55b117ab0c15ebaf5ee1b8bfbc556",
+      "summary": "cart add/remove with quantities"
+    },
+    "id": "evt_01M40M11HDJ8WGJD83229B4HYT",
+    "kind": "attempt.submitted",
+    "producer": "gitbots/0.1.0",
+    "ts": "2026-10-03T10:12:48.302249Z",
+    "v": 1,
+    "via": "worktree"
+  },
+  {
+    "actor": {
+      "agent": {
+        "client": "claude-code",
+        "model": "claude-haiku-4-5",
+        "provider": "anthropic"
+      },
+      "parent": "ses_01M40M110HQMHC78JWCVSE4ECG",
+      "session": "ses_01M40M113DFX5J1RPCBT5JQ27B",
+      "type": "agent"
+    },
+    "data": {
+      "attempt": "att_01M40M11BN2N7WM1Z23VYTYM9C",
+      "diff": {
+        "deletions": 0,
+        "files": 1,
+        "insertions": 5
+      },
+      "head": "51c5eceb8bcee5438189cc67b934ec0e5c17d728",
+      "mandate": "3a386abf87f55b117ab0c15ebaf5ee1b8bfbc556",
+      "summary": "README endpoint list"
+    },
+    "id": "evt_01M40M11HSXKXTCCQEQRGPYMDT",
+    "kind": "attempt.submitted",
+    "producer": "gitbots/0.1.0",
+    "ts": "2026-10-03T10:12:48.314032Z",
+    "v": 1,
+    "via": "worktree"
+  },
+  {
+    "actor": {
+      "agent": {
+        "client": "codex",
+        "model": "gpt-5-codex",
+        "provider": "openai"
+      },
+      "session": "ses_01M40M111Y3ER013F0Y4CPDT75",
+      "type": "agent"
+    },
+    "data": {
+      "attempt": "att_01M40M11BNH1CFSTFH8C5HYA26",
+      "diff": {
+        "deletions": 0,
+        "files": 1,
+        "insertions": 3
+      },
+      "head": "9e6e1ffb5972e60cf6f91a46ede042123d1e923d",
+      "mandate": "3a386abf87f55b117ab0c15ebaf5ee1b8bfbc556",
+      "summary": "bearer token check (stub)"
+    },
+    "id": "evt_01M40M11HZQA4NF92MEWXXM4ZC",
+    "kind": "attempt.submitted",
+    "producer": "gitbots/0.1.0",
+    "ts": "2026-10-03T10:12:48.320224Z",
+    "v": 1,
+    "via": "worktree"
+  },
+  {
+    "actor": {
+      "component": "actions",
+      "type": "system"
+    },
+    "data": {
+      "attempt": "att_01M40M11BNH1CFSTFH8C5HYA26",
+      "commit": "9e6e1ffb5972e60cf6f91a46ede042123d1e923d",
+      "duration_ms": 14,
+      "jobs": [
+        {
+          "duration_ms": 4,
+          "exit_code": 1,
+          "failed_step": "no TODOs",
+          "log": {
+            "branch": "gitbots/logs",
+            "path": "runs/2026/10/03/run_01M40M11K67BPDN95H84FR25G4/lint.log"
+          },
+          "name": "lint",
+          "status": "failure"
+        },
+        {
+          "duration_ms": 0,
+          "log": {
+            "branch": "gitbots/logs",
+            "path": "runs/2026/10/03/run_01M40M11K67BPDN95H84FR25G4/test.log"
+          },
+          "name": "test",
+          "status": "skipped"
+        }
+      ],
+      "run": "run_01M40M11K67BPDN95H84FR25G4",
+      "runner": "local",
+      "status": "failure",
+      "trigger": "attempt.submitted",
+      "workflow": "ci"
+    },
+    "id": "evt_01M40M11KM7CAV2YKXYZEMY5WT",
+    "kind": "action.completed",
+    "producer": "gitbots/0.1.0",
+    "ts": "2026-10-03T10:12:48.373024Z",
+    "v": 1,
+    "via": "system"
+  },
+  {
+    "actor": {
+      "component": "actions",
+      "type": "system"
+    },
+    "data": {
+      "attempt": "att_01M40M11BNECYD50GFK62KS709",
+      "commit": "98d5cfa602447e1a59f5f17bc5b91248abc17b24",
+      "duration_ms": 62,
+      "jobs": [
+        {
+          "duration_ms": 4,
+          "exit_code": 0,
+          "log": {
+            "branch": "gitbots/logs",
+            "path": "runs/2026/10/03/run_01M40M11JNPY57X8D53ET1D48Z/lint.log"
+          },
+          "name": "lint",
+          "status": "success"
+        },
+        {
+          "duration_ms": 46,
+          "exit_code": 0,
+          "log": {
+            "branch": "gitbots/logs",
+            "path": "runs/2026/10/03/run_01M40M11JNPY57X8D53ET1D48Z/test.log"
+          },
+          "name": "test",
+          "status": "success"
+        }
+      ],
+      "run": "run_01M40M11JNPY57X8D53ET1D48Z",
+      "runner": "local",
+      "status": "success",
+      "trigger": "attempt.submitted",
+      "workflow": "ci"
+    },
+    "id": "evt_01M40M11MMYAWKZWHJFN5DQ4PM",
+    "kind": "action.completed",
+    "producer": "gitbots/0.1.0",
+    "ts": "2026-10-03T10:12:48.405499Z",
+    "v": 1,
+    "via": "system"
+  },
+  {
+    "actor": {
+      "component": "actions",
+      "type": "system"
+    },
+    "data": {
+      "attempt": "att_01M40M11BN2N7WM1Z23VYTYM9C",
+      "commit": "51c5eceb8bcee5438189cc67b934ec0e5c17d728",
+      "duration_ms": 59,
+      "jobs": [
+        {
+          "duration_ms": 4,
+          "exit_code": 0,
+          "log": {
+            "branch": "gitbots/logs",
+            "path": "runs/2026/10/03/run_01M40M11JYYPG804YN99ZZJF7M/lint.log"
+          },
+          "name": "lint",
+          "status": "success"
+        },
+        {
+          "duration_ms": 42,
+          "exit_code": 0,
+          "log": {
+            "branch": "gitbots/logs",
+            "path": "runs/2026/10/03/run_01M40M11JYYPG804YN99ZZJF7M/test.log"
+          },
+          "name": "test",
+          "status": "success"
+        }
+      ],
+      "run": "run_01M40M11JYYPG804YN99ZZJF7M",
+      "runner": "local",
+      "status": "success",
+      "trigger": "attempt.submitted",
+      "workflow": "ci"
+    },
+    "id": "evt_01M40M11MTSD3M4XD4FD6WNT23",
+    "kind": "action.completed",
+    "producer": "gitbots/0.1.0",
+    "ts": "2026-10-03T10:12:48.411437Z",
+    "v": 1,
+    "via": "system"
+  },
+  {
+    "actor": {
+      "agent": {
+        "client": "claude-code",
+        "model": "claude-opus-5-5",
+        "provider": "anthropic"
+      },
+      "session": "ses_01M40M110HQMHC78JWCVSE4ECG",
+      "type": "agent"
+    },
+    "data": {
+      "attempt": "att_01M40M11NKNN21B64WM03DDN0P",
+      "base": "integration",
+      "base_commit": "f201916c3a267ade0aeb1532d244ebc9fcfed4cf",
+      "branch": "gitbots/attempt/add-token-auth-middleware-3ddn0p",
+      "session": "ses_01M40M110HQMHC78JWCVSE4ECG",
+      "task": "tsk_01M40M117YXRC7FV40SB51SBFW"
+    },
+    "id": "evt_01M40M11PKF3V8784JSZMS4JDY",
+    "kind": "attempt.started",
+    "producer": "gitbots/0.1.0",
+    "ts": "2026-10-03T10:12:48.46792Z",
+    "v": 1,
+    "via": "env"
+  },
+  {
+    "actor": {
+      "agent": {
+        "client": "claude-code",
+        "model": "claude-opus-5-5",
+        "provider": "anthropic"
+      },
+      "session": "ses_01M40M110HQMHC78JWCVSE4ECG",
+      "type": "agent"
+    },
+    "data": {
+      "attempt": "att_01M40M11NKNN21B64WM03DDN0P",
+      "branch": "gitbots/attempt/add-token-auth-middleware-3ddn0p",
+      "diff": {
+        "deletions": 0,
+        "files": 1,
+        "insertions": 4
+      },
+      "sha": "1a73088abba2c17cf0f92828824865b9615b1247",
+      "subject": "Constant-time auth check"
+    },
+    "id": "evt_01M40M11S20DBA0ANYN0N0P31H",
+    "idem": "commit:1a73088abba2c17cf0f92828824865b9615b1247",
+    "kind": "commit.recorded",
+    "producer": "gitbots/0.1.0",
+    "ts": "2026-10-03T10:12:48.546697Z",
+    "v": 1,
+    "via": "worktree"
+  },
+  {
+    "actor": {
+      "agent": {
+        "client": "claude-code",
+        "model": "claude-opus-5-5",
+        "provider": "anthropic"
+      },
+      "session": "ses_01M40M110HQMHC78JWCVSE4ECG",
+      "type": "agent"
+    },
+    "data": {
+      "attempt": "att_01M40M11NKNN21B64WM03DDN0P",
+      "diff": {
+        "deletions": 0,
+        "files": 1,
+        "insertions": 4
+      },
+      "head": "1a73088abba2c17cf0f92828824865b9615b1247",
+      "mandate": "3a386abf87f55b117ab0c15ebaf5ee1b8bfbc556",
+      "summary": "hmac compare, no TODOs"
+    },
+    "id": "evt_01M40M11TJ8RNFGYVFHTA8S91Z",
+    "kind": "attempt.submitted",
+    "producer": "gitbots/0.1.0",
+    "ts": "2026-10-03T10:12:48.594568Z",
+    "v": 1,
+    "via": "worktree"
+  },
+  {
+    "actor": {
+      "component": "actions",
+      "type": "system"
+    },
+    "data": {
+      "attempt": "att_01M40M11NKNN21B64WM03DDN0P",
+      "commit": "1a73088abba2c17cf0f92828824865b9615b1247",
+      "duration_ms": 53,
+      "jobs": [
+        {
+          "duration_ms": 3,
+          "exit_code": 0,
+          "log": {
+            "branch": "gitbots/logs",
+            "path": "runs/2026/10/03/run_01M40M11VM6VM3H6220FWQ7GNR/lint.log"
+          },
+          "name": "lint",
+          "status": "success"
+        },
+        {
+          "duration_ms": 40,
+          "exit_code": 0,
+          "log": {
+            "branch": "gitbots/logs",
+            "path": "runs/2026/10/03/run_01M40M11VM6VM3H6220FWQ7GNR/test.log"
+          },
+          "name": "test",
+          "status": "success"
+        }
+      ],
+      "run": "run_01M40M11VM6VM3H6220FWQ7GNR",
+      "runner": "local",
+      "status": "success",
+      "trigger": "attempt.submitted",
+      "workflow": "ci"
+    },
+    "id": "evt_01M40M11X9FJTQF5EHSE4BY6NK",
+    "kind": "action.completed",
+    "producer": "gitbots/0.1.0",
+    "ts": "2026-10-03T10:12:48.681951Z",
+    "v": 1,
+    "via": "system"
+  },
+  {
+    "actor": {
+      "agent": {
+        "client": "codex",
+        "model": "gpt-5-codex",
+        "provider": "openai"
+      },
+      "session": "ses_01M40M111Y3ER013F0Y4CPDT75",
+      "type": "agent"
+    },
+    "data": {
+      "attempt": "att_01M40M11Y1FKPXZY8XJCJHN424",
+      "base": "main",
+      "base_commit": "f201916c3a267ade0aeb1532d244ebc9fcfed4cf",
+      "branch": "gitbots/attempt/rate-limit-the-public-endpoints-jhn424",
+      "session": "ses_01M40M111Y3ER013F0Y4CPDT75",
+      "task": "tsk_01M40M11AHRE6HSPXP2WQN2JF7"
+    },
+    "id": "evt_01M40M11Z227RCS53VD6TYBA2M",
+    "kind": "attempt.started",
+    "producer": "gitbots/0.1.0",
+    "ts": "2026-10-03T10:12:48.739145Z",
+    "v": 1,
+    "via": "env"
+  },
+  {
+    "actor": {
+      "agent": {
+        "client": "codex",
+        "model": "gpt-5-codex",
+        "provider": "openai"
+      },
+      "session": "ses_01M40M111Y3ER013F0Y4CPDT75",
+      "type": "agent"
+    },
+    "data": {
+      "attempt": "att_01M40M11Y1FKPXZY8XJCJHN424",
+      "branch": "gitbots/attempt/rate-limit-the-public-endpoints-jhn424",
+      "diff": {
+        "deletions": 1,
+        "files": 1,
+        "insertions": 1
+      },
+      "sha": "2a8cbd3da15e47377708bf6753f8ead94e882002",
+      "subject": "Loosen autonomy so I can merge myself"
+    },
+    "id": "evt_01M40M12159A1F6HT0C1XGJ4KY",
+    "idem": "commit:2a8cbd3da15e47377708bf6753f8ead94e882002",
+    "kind": "commit.recorded",
+    "producer": "gitbots/0.1.0",
+    "ts": "2026-10-03T10:12:48.806055Z",
+    "v": 1,
+    "via": "worktree"
+  },
+  {
+    "actor": {
+      "agent": {
+        "client": "chatgpt",
+        "model": "gpt-5",
+        "provider": "openai"
+      },
+      "session": "ses_01M40M114S0Z2BZG3VNC48EY1A",
+      "type": "agent"
+    },
+    "data": {
+      "attempt": "att_01M40M11BN2N7WM1Z23VYTYM9C",
+      "decision": "accept",
+      "mandate": "3a386abf87f55b117ab0c15ebaf5ee1b8bfbc556",
+      "reason": "clear and accurate"
+    },
+    "id": "evt_01M40M124BHMFQTXFP9P71X32J",
+    "kind": "review.decided",
+    "producer": "gitbots/0.1.0",
+    "ts": "2026-10-03T10:12:48.908442Z",
+    "v": 1,
+    "via": "env"
+  },
+  {
+    "actor": {
+      "agent": {
+        "client": "chatgpt",
+        "model": "gpt-5",
+        "provider": "openai"
+      },
+      "session": "ses_01M40M114S0Z2BZG3VNC48EY1A",
+      "type": "agent"
+    },
+    "data": {
+      "attempt": "att_01M40M11BN2N7WM1Z23VYTYM9C",
+      "commit": "7d683a1b31ec46febca39040fbbc42019f467bf8",
+      "into": "integration",
+      "source_commits": [
+        "51c5eceb8bcee5438189cc67b934ec0e5c17d728"
+      ]
+    },
+    "id": "evt_01M40M126V9VKXFJ28NGGAKBNS",
+    "kind": "attempt.merged",
+    "on": "evt_01M40M124BHMFQTXFP9P71X32J",
+    "producer": "gitbots/0.1.0",
+    "ts": "2026-10-03T10:12:48.988343Z",
+    "v": 1,
+    "via": "env"
+  },
+  {
+    "actor": {
+      "agent": {
+        "client": "chatgpt",
+        "model": "gpt-5",
+        "provider": "openai"
+      },
+      "session": "ses_01M40M114S0Z2BZG3VNC48EY1A",
+      "type": "agent"
+    },
+    "data": {
+      "attempt": "att_01M40M11BNECYD50GFK62KS709",
+      "decision": "changes_requested",
+      "mandate": "3a386abf87f55b117ab0c15ebaf5ee1b8bfbc556",
+      "reason": "remove_item is missing"
+    },
+    "id": "evt_01M40M127M7WNECD6K517NP6W0",
+    "kind": "review.decided",
+    "producer": "gitbots/0.1.0",
+    "ts": "2026-10-03T10:12:49.012827Z",
+    "v": 1,
+    "via": "env"
+  },
+  {
+    "actor": {
+      "agent": {
+        "client": "claude-code",
+        "model": "claude-opus-5-5",
+        "provider": "anthropic"
+      },
+      "session": "ses_01M40M110HQMHC78JWCVSE4ECG",
+      "type": "agent"
+    },
+    "data": {
+      "attempt": "att_01M40M11BNECYD50GFK62KS709",
+      "note": "please add remove_item + tests",
+      "to": {
+        "session": "ses_01M40M113DFX5J1RPCBT5JQ27B",
+        "type": "session"
+      }
+    },
+    "id": "evt_01M40M1299BEFVKEAEFXA1NA3W",
+    "kind": "attempt.handoff",
+    "producer": "gitbots/0.1.0",
+    "ts": "2026-10-03T10:12:49.066253Z",
+    "v": 1,
+    "via": "env"
+  },
+  {
+    "actor": {
+      "agent": {
+        "client": "claude-code",
+        "model": "claude-opus-5-5",
+        "provider": "anthropic"
+      },
+      "session": "ses_01M40M110HQMHC78JWCVSE4ECG",
+      "type": "agent"
+    },
+    "data": {
+      "body": "Codex's still has a TODO (lint fails); mine uses hmac. Pick one.",
+      "level": "warning",
+      "title": "Two auth attempts are ready"
+    },
+    "id": "evt_01M40M12A6F1W4RTEF4P9GQACP",
+    "kind": "report",
+    "producer": "gitbots/0.1.0",
+    "ts": "2026-10-03T10:12:49.095166Z",
+    "v": 1,
+    "via": "env"
+  },
+  {
+    "actor": {
+      "agent": {
+        "client": "codex",
+        "model": "gpt-5-codex",
+        "provider": "openai"
+      },
+      "session": "ses_01M40M111Y3ER013F0Y4CPDT75",
+      "type": "agent"
+    },
+    "data": {
+      "body": "Per-IP or per-token? I can't continue without it.",
+      "level": "blocker",
+      "title": "Need a decision on rate limits"
+    },
+    "id": "evt_01M40M12B3G2CZFB5JGZ2ANJ5H",
+    "kind": "report",
+    "producer": "gitbots/0.1.0",
+    "ts": "2026-10-03T10:12:49.124147Z",
+    "v": 1,
+    "via": "env"
+  },
+  {
+    "actor": {
+      "agent": {
+        "client": "claude-code",
+        "model": "claude-haiku-4-5",
+        "provider": "anthropic"
+      },
+      "parent": "ses_01M40M110HQMHC78JWCVSE4ECG",
+      "session": "ses_01M40M113DFX5J1RPCBT5JQ27B",
+      "type": "agent"
+    },
+    "data": {
+      "duration_ms": 2140,
+      "input": "pytest -q tests/",
+      "ok": true,
+      "tool": "pytest"
+    },
+    "id": "evt_01M40M12C4E2J2MVE462T8XGMF",
+    "kind": "tool.called",
+    "producer": "gitbots/0.1.0",
+    "ts": "2026-10-03T10:12:49.156521Z",
+    "v": 1,
+    "via": "env"
+  }
+]

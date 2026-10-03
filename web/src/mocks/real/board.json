@@ -1,0 +1,401 @@
+{
+  "attempts": [
+    {
+      "base": "integration",
+      "base_commit": "f201916c3a267ade0aeb1532d244ebc9fcfed4cf",
+      "branch": "gitbots/attempt/document-the-api-in-readme-ytym9c",
+      "checks_passed": true,
+      "diff": {
+        "deletions": 0,
+        "files": 1,
+        "insertions": 5
+      },
+      "head": "51c5eceb8bcee5438189cc67b934ec0e5c17d728",
+      "holder": null,
+      "id": "att_01M40M11BN2N7WM1Z23VYTYM9C",
+      "merged_commit": "7d683a1b31ec46febca39040fbbc42019f467bf8",
+      "review": {
+        "at": "2026-10-03T10:12:48.908442Z",
+        "by": {
+          "agent": {
+            "client": "chatgpt",
+            "model": "gpt-5",
+            "provider": "openai"
+          },
+          "session": "ses_01M40M114S0Z2BZG3VNC48EY1A",
+          "type": "agent"
+        },
+        "decision": "accept",
+        "reason": "clear and accurate"
+      },
+      "runs": [
+        {
+          "commit": "51c5eceb8bcee5438189cc67b934ec0e5c17d728",
+          "run": "run_01M40M11JYYPG804YN99ZZJF7M",
+          "status": "success",
+          "workflow": "ci"
+        }
+      ],
+      "session": "ses_01M40M113DFX5J1RPCBT5JQ27B",
+      "started_at": "2026-10-03T10:12:48.162818Z",
+      "started_by": {
+        "agent": {
+          "client": "claude-code",
+          "model": "claude-haiku-4-5",
+          "provider": "anthropic"
+        },
+        "parent": "ses_01M40M110HQMHC78JWCVSE4ECG",
+        "session": "ses_01M40M113DFX5J1RPCBT5JQ27B",
+        "type": "agent"
+      },
+      "state": "merged",
+      "submitted_by": {
+        "agent": {
+          "client": "claude-code",
+          "model": "claude-haiku-4-5",
+          "provider": "anthropic"
+        },
+        "parent": "ses_01M40M110HQMHC78JWCVSE4ECG",
+        "session": "ses_01M40M113DFX5J1RPCBT5JQ27B",
+        "type": "agent"
+      },
+      "summary": "README endpoint list",
+      "task": "tsk_01M40M1198WD2G1BMM5DSFWTPY",
+      "updated_at": "2026-10-03T10:12:48.988343Z"
+    },
+    {
+      "base": "integration",
+      "base_commit": "f201916c3a267ade0aeb1532d244ebc9fcfed4cf",
+      "branch": "gitbots/attempt/add-a-shopping-cart-endpoint-2ks709",
+      "checks_passed": true,
+      "diff": {
+        "deletions": 0,
+        "files": 1,
+        "insertions": 3
+      },
+      "head": "98d5cfa602447e1a59f5f17bc5b91248abc17b24",
+      "holder": {
+        "session": "ses_01M40M113DFX5J1RPCBT5JQ27B",
+        "type": "session"
+      },
+      "id": "att_01M40M11BNECYD50GFK62KS709",
+      "merged_commit": null,
+      "review": {
+        "at": "2026-10-03T10:12:49.012827Z",
+        "by": {
+          "agent": {
+            "client": "chatgpt",
+            "model": "gpt-5",
+            "provider": "openai"
+          },
+          "session": "ses_01M40M114S0Z2BZG3VNC48EY1A",
+          "type": "agent"
+        },
+        "decision": "changes_requested",
+        "reason": "remove_item is missing"
+      },
+      "runs": [
+        {
+          "commit": "98d5cfa602447e1a59f5f17bc5b91248abc17b24",
+          "run": "run_01M40M11JNPY57X8D53ET1D48Z",
+          "status": "success",
+          "workflow": "ci"
+        }
+      ],
+      "session": "ses_01M40M110HQMHC78JWCVSE4ECG",
+      "started_at": "2026-10-03T10:12:48.162821Z",
+      "started_by": {
+        "agent": {
+          "client": "claude-code",
+          "model": "claude-opus-5-5",
+          "provider": "anthropic"
+        },
+        "session": "ses_01M40M110HQMHC78JWCVSE4ECG",
+        "type": "agent"
+      },
+      "state": "changes_requested",
+      "submitted_by": {
+        "agent": {
+          "client": "claude-code",
+          "model": "claude-opus-5-5",
+          "provider": "anthropic"
+        },
+        "session": "ses_01M40M110HQMHC78JWCVSE4ECG",
+        "type": "agent"
+      },
+      "summary": "cart add/remove with quantities",
+      "task": "tsk_01M40M116KDPNJ18R2WQN0MKSP",
+      "updated_at": "2026-10-03T10:12:49.066253Z"
+    },
+    {
+      "base": "integration",
+      "base_commit": "f201916c3a267ade0aeb1532d244ebc9fcfed4cf",
+      "branch": "gitbots/attempt/add-token-auth-middleware-5hya26",
+      "checks_passed": false,
+      "diff": {
+        "deletions": 0,
+        "files": 1,
+        "insertions": 3
+      },
+      "head": "9e6e1ffb5972e60cf6f91a46ede042123d1e923d",
+      "holder": null,
+      "id": "att_01M40M11BNH1CFSTFH8C5HYA26",
+      "merged_commit": null,
+      "review": null,
+      "runs": [
+        {
+          "commit": "9e6e1ffb5972e60cf6f91a46ede042123d1e923d",
+          "run": "run_01M40M11K67BPDN95H84FR25G4",
+          "status": "failure",
+          "workflow": "ci"
+        }
+      ],
+      "session": "ses_01M40M111Y3ER013F0Y4CPDT75",
+      "started_at": "2026-10-03T10:12:48.162823Z",
+      "started_by": {
+        "agent": {
+          "client": "codex",
+          "model": "gpt-5-codex",
+          "provider": "openai"
+        },
+        "session": "ses_01M40M111Y3ER013F0Y4CPDT75",
+        "type": "agent"
+      },
+      "state": "submitted",
+      "submitted_by": {
+        "agent": {
+          "client": "codex",
+          "model": "gpt-5-codex",
+          "provider": "openai"
+        },
+        "session": "ses_01M40M111Y3ER013F0Y4CPDT75",
+        "type": "agent"
+      },
+      "summary": "bearer token check (stub)",
+      "task": "tsk_01M40M117YXRC7FV40SB51SBFW",
+      "updated_at": "2026-10-03T10:12:48.373024Z"
+    },
+    {
+      "base": "integration",
+      "base_commit": "f201916c3a267ade0aeb1532d244ebc9fcfed4cf",
+      "branch": "gitbots/attempt/add-token-auth-middleware-3ddn0p",
+      "checks_passed": true,
+      "diff": {
+        "deletions": 0,
+        "files": 1,
+        "insertions": 4
+      },
+      "head": "1a73088abba2c17cf0f92828824865b9615b1247",
+      "holder": null,
+      "id": "att_01M40M11NKNN21B64WM03DDN0P",
+      "merged_commit": null,
+      "review": null,
+      "runs": [
+        {
+          "commit": "1a73088abba2c17cf0f92828824865b9615b1247",
+          "run": "run_01M40M11VM6VM3H6220FWQ7GNR",
+          "status": "success",
+          "workflow": "ci"
+        }
+      ],
+      "session": "ses_01M40M110HQMHC78JWCVSE4ECG",
+      "started_at": "2026-10-03T10:12:48.46792Z",
+      "started_by": {
+        "agent": {
+          "client": "claude-code",
+          "model": "claude-opus-5-5",
+          "provider": "anthropic"
+        },
+        "session": "ses_01M40M110HQMHC78JWCVSE4ECG",
+        "type": "agent"
+      },
+      "state": "submitted",
+      "submitted_by": {
+        "agent": {
+          "client": "claude-code",
+          "model": "claude-opus-5-5",
+          "provider": "anthropic"
+        },
+        "session": "ses_01M40M110HQMHC78JWCVSE4ECG",
+        "type": "agent"
+      },
+      "summary": "hmac compare, no TODOs",
+      "task": "tsk_01M40M117YXRC7FV40SB51SBFW",
+      "updated_at": "2026-10-03T10:12:48.681951Z"
+    },
+    {
+      "base": "main",
+      "base_commit": "f201916c3a267ade0aeb1532d244ebc9fcfed4cf",
+      "branch": "gitbots/attempt/rate-limit-the-public-endpoints-jhn424",
+      "checks_passed": null,
+      "diff": null,
+      "head": "2a8cbd3da15e47377708bf6753f8ead94e882002",
+      "holder": null,
+      "id": "att_01M40M11Y1FKPXZY8XJCJHN424",
+      "merged_commit": null,
+      "review": null,
+      "runs": [],
+      "session": "ses_01M40M111Y3ER013F0Y4CPDT75",
+      "started_at": "2026-10-03T10:12:48.739145Z",
+      "started_by": {
+        "agent": {
+          "client": "codex",
+          "model": "gpt-5-codex",
+          "provider": "openai"
+        },
+        "session": "ses_01M40M111Y3ER013F0Y4CPDT75",
+        "type": "agent"
+      },
+      "state": "active",
+      "submitted_by": null,
+      "summary": null,
+      "task": "tsk_01M40M11AHRE6HSPXP2WQN2JF7",
+      "updated_at": "2026-10-03T10:12:48.806055Z"
+    }
+  ],
+  "awaiting_review": [
+    "att_01M40M11BNH1CFSTFH8C5HYA26",
+    "att_01M40M11NKNN21B64WM03DDN0P"
+  ],
+  "orphans": 0,
+  "sessions": [
+    {
+      "ended": false,
+      "session": {
+        "agent": {
+          "client": "claude-code",
+          "model": "claude-opus-5-5",
+          "provider": "anthropic"
+        },
+        "id": "ses_01M40M110HQMHC78JWCVSE4ECG",
+        "label": "lead dev",
+        "operator": "gstohl",
+        "role": "implementer",
+        "started_at": "2026-10-03T10:12:47.775681Z"
+      }
+    },
+    {
+      "ended": false,
+      "session": {
+        "agent": {
+          "client": "codex",
+          "model": "gpt-5-codex",
+          "provider": "openai"
+        },
+        "id": "ses_01M40M111Y3ER013F0Y4CPDT75",
+        "operator": "gstohl",
+        "role": "implementer",
+        "started_at": "2026-10-03T10:12:47.822126Z"
+      }
+    },
+    {
+      "ended": false,
+      "session": {
+        "agent": {
+          "client": "claude-code",
+          "model": "claude-haiku-4-5",
+          "provider": "anthropic"
+        },
+        "id": "ses_01M40M113DFX5J1RPCBT5JQ27B",
+        "label": "opus subagent",
+        "operator": "gstohl",
+        "parent": "ses_01M40M110HQMHC78JWCVSE4ECG",
+        "role": "tester",
+        "started_at": "2026-10-03T10:12:47.867492Z"
+      }
+    },
+    {
+      "ended": false,
+      "session": {
+        "agent": {
+          "client": "chatgpt",
+          "model": "gpt-5",
+          "provider": "openai"
+        },
+        "id": "ses_01M40M114S0Z2BZG3VNC48EY1A",
+        "operator": "gstohl",
+        "role": "reviewer",
+        "started_at": "2026-10-03T10:12:47.91179Z"
+      }
+    }
+  ],
+  "tasks": [
+    {
+      "attempts": [
+        "att_01M40M11BNECYD50GFK62KS709"
+      ],
+      "body": null,
+      "created_at": "2026-10-03T10:12:47.956008Z",
+      "created_by": {
+        "email": "dominik@example.com",
+        "handle": "gstohl",
+        "type": "human"
+      },
+      "id": "tsk_01M40M116KDPNJ18R2WQN0MKSP",
+      "labels": [
+        "api"
+      ],
+      "recipe": null,
+      "status": "in_progress",
+      "title": "Add a shopping cart endpoint"
+    },
+    {
+      "attempts": [
+        "att_01M40M11BNH1CFSTFH8C5HYA26",
+        "att_01M40M11NKNN21B64WM03DDN0P"
+      ],
+      "body": null,
+      "created_at": "2026-10-03T10:12:47.999237Z",
+      "created_by": {
+        "email": "dominik@example.com",
+        "handle": "gstohl",
+        "type": "human"
+      },
+      "id": "tsk_01M40M117YXRC7FV40SB51SBFW",
+      "labels": [
+        "security"
+      ],
+      "recipe": null,
+      "status": "in_progress",
+      "title": "Add token auth middleware"
+    },
+    {
+      "attempts": [
+        "att_01M40M11BN2N7WM1Z23VYTYM9C"
+      ],
+      "body": null,
+      "created_at": "2026-10-03T10:12:48.041451Z",
+      "created_by": {
+        "email": "dominik@example.com",
+        "handle": "gstohl",
+        "type": "human"
+      },
+      "id": "tsk_01M40M1198WD2G1BMM5DSFWTPY",
+      "labels": [
+        "docs"
+      ],
+      "recipe": null,
+      "status": "done",
+      "title": "Document the API in README"
+    },
+    {
+      "attempts": [
+        "att_01M40M11Y1FKPXZY8XJCJHN424"
+      ],
+      "body": null,
+      "created_at": "2026-10-03T10:12:48.082239Z",
+      "created_by": {
+        "email": "dominik@example.com",
+        "handle": "gstohl",
+        "type": "human"
+      },
+      "id": "tsk_01M40M11AHRE6HSPXP2WQN2JF7",
+      "labels": [
+        "api"
+      ],
+      "recipe": null,
+      "status": "in_progress",
+      "title": "Rate-limit the public endpoints"
+    }
+  ]
+}

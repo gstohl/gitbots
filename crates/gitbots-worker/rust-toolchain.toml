@@ -1,0 +1,5 @@
+# workers-rs 0.8 needs Rust >= 1.91; the rest of the workspace keeps its MSRV.
+[toolchain]
+channel = "1.93.0"
+targets = ["wasm32-unknown-unknown"]
+components = ["clippy", "rustfmt"]

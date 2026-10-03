@@ -1,0 +1,9 @@
+diff --git a/src/auth.py b/src/auth.py
+new file mode 100644
+index 0000000..71b1cf0
+--- /dev/null
++++ b/src/auth.py
+@@ -0,0 +1,3 @@
++def check(token):
++    # TODO: real verification
++    return token == "secret"

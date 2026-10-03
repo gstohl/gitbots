@@ -1,0 +1,72 @@
+{
+  "unauthorized": {
+    "status": 401,
+    "body": {
+      "error": "missing or wrong token: open the link `gitbots ui` printed"
+    }
+  },
+  "host_guard": {
+    "status": 403,
+    "body": {
+      "error": "host `evil.example:7799` not allowed"
+    }
+  },
+  "attempt_not_found": {
+    "status": 404,
+    "body": {
+      "error": "no attempt matches `zzzzzz`"
+    }
+  },
+  "unknown_endpoint": {
+    "status": 404,
+    "body": {
+      "error": "no such endpoint"
+    }
+  },
+  "review_not_submitted": {
+    "status": 422,
+    "body": {
+      "error": "attempt is merged; only submitted attempts can be reviewed"
+    }
+  },
+  "review_merge_without_accept": {
+    "status": 422,
+    "body": {
+      "error": "attempt is merged; only submitted attempts can be reviewed"
+    }
+  },
+  "review_bad_decision": {
+    "status": 422,
+    "body": "Failed to deserialize the JSON body into the target type: decision: unknown variant `maybe`, expected one of `accept`, `reject`, `changes_requested` at line 1 column 19"
+  },
+  "task_empty_title": {
+    "status": 422,
+    "body": {
+      "error": "title is required"
+    }
+  },
+  "task_bad_json": {
+    "status": 400,
+    "body": "Failed to parse the request body as JSON: key must be a string at line 1 column 2"
+  },
+  "task_no_content_type": {
+    "status": 415,
+    "body": "Expected request with `Content-Type: application/json`"
+  },
+  "log_missing_path": {
+    "status": 400,
+    "body": "Failed to deserialize query string: missing field `path`"
+  },
+  "log_not_found": {
+    "status": 404,
+    "body": {
+      "error": "no log at nope.log"
+    }
+  },
+  "read_only_write": {
+    "status": 403,
+    "body": {
+      "error": "this gitbots ui was started by an agent and is read-only"
+    }
+  }
+}

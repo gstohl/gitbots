@@ -1,0 +1,50 @@
+[workspace]
+resolver = "3"
+members = ["crates/*"]
+# The Cloudflare Worker builds only for wasm32 with its own toolchain and lockfile
+# (see crates/gitbots-worker/README.md).
+exclude = ["crates/gitbots-worker"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.88"
+license = "Apache-2.0"
+repository = "https://github.com/gstohl/gitbots"
+
+[workspace.dependencies]
+gitbots-core = { path = "crates/gitbots-core" }
+gitbots-git = { path = "crates/gitbots-git" }
+gitbots-actions = { path = "crates/gitbots-actions" }
+gitbots-cloud = { path = "crates/gitbots-cloud" }
+
+anyhow = "1"
+futures-util = { version = "0.3", default-features = false, features = ["alloc"] }
+axum = "0.8"
+gix = { version = "0.88", default-features = false, features = ["sha1", "revision", "parallel", "anyhow"] }
+clap ={ version = "4.6", features = ["derive", "env"] }
+globset = { version = "0.4", default-features = false }
+mime_guess = "2"
+nix = { version = "0.31", default-features = false }
+regex = "1"
+reqwest = { version = "0.13", default-features = false }
+serde = { version = "1", features = ["derive"] }
+sha2 = "0.11"
+serde_json = "1"
+similar = "3.2"
+tempfile = "3"
+thiserror = "2"
+time = { version = "0.3", features = ["serde", "formatting", "parsing", "macros"] }
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "process", "time", "io-util", "sync", "fs", "net"] }
+toml = "1"
+ulid = { version = "3", default-features = false }
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+
+[workspace.lints.clippy]
+all = { level = "warn", priority = -1 }
+
+[profile.release]
+lto = "thin"
+strip = true

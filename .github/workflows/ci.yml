@@ -1,0 +1,130 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+          targets: wasm32-unknown-unknown
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: fmt
+        run: cargo fmt --all --check
+
+      - name: clippy
+        run: cargo clippy --workspace --all-targets -- -D warnings
+
+      # Tests should not depend on this, but a git identity keeps any test that
+      # shells out to `git commit` from failing on a bare runner.
+      - name: git identity
+        run: |
+          git config --global user.name "gitbots-ci"
+          git config --global user.email "ci@gitbots.invalid"
+
+      - name: test
+        run: cargo test --workspace
+
+      # gitbots-core must stay IO-free so it runs in a Cloudflare Worker.
+      - name: gitbots-core builds for wasm32
+        run: cargo check -p gitbots-core --target wasm32-unknown-unknown
+
+  # The human frontend (SolidJS + TypeScript), the one non-Rust part of the repo.
+  web:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: install
+        run: npm ci
+
+      - name: typecheck
+        run: npm run typecheck
+
+      # Includes the contract tests against real `gitbots ui` responses
+      # (src/mocks/real) and a drift check against crates/gitbots-core/src/event.rs.
+      - name: test
+        run: npm test
+
+      - name: build
+        run: npm run build
+
+  # The Cloudflare Worker is its own workspace (wasm32 only, own lockfile,
+  # Rust 1.93 from crates/gitbots-worker/rust-toolchain.toml). Deploys run
+  # worker-build via `wrangler deploy`; CI checks the same code compiles,
+  # lints and links for wasm32.
+  worker:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: crates/gitbots-worker
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: dtolnay/rust-toolchain@1.93.0
+        with:
+          components: clippy, rustfmt
+          targets: wasm32-unknown-unknown
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: crates/gitbots-worker
+
+      - name: fmt
+        run: cargo fmt --check
+
+      - name: clippy (wasm32)
+        run: cargo clippy --locked --target wasm32-unknown-unknown --all-targets -- -D warnings
+
+      - name: build (wasm32, release)
+        run: cargo build --locked --target wasm32-unknown-unknown --release
+
+  # Same checks on Celesto CI runners (https://celesto.ai/ci).
+  # Requires the "Celesto Cloud CI" GitHub App installed on the repo.
+  # This is CI for this repo only; it is not the gitbots `celesto` actions runner.
+  #
+  # check-celesto:
+  #   runs-on: [self-hosted, celesto-cloud]
+  #   steps:
+  #     - uses: actions/checkout@v5
+  #     - uses: dtolnay/rust-toolchain@stable
+  #       with:
+  #         components: clippy, rustfmt
+  #         targets: wasm32-unknown-unknown
+  #     - uses: Swatinem/rust-cache@v2
+  #     - run: cargo fmt --all --check
+  #     - run: cargo clippy --workspace --all-targets -- -D warnings
+  #     - run: |
+  #         git config --global user.name "gitbots-ci"
+  #         git config --global user.email "ci@gitbots.invalid"
+  #     - run: cargo test --workspace
+  #     - run: cargo check -p gitbots-core --target wasm32-unknown-unknown

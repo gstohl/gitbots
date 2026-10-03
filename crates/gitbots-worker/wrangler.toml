@@ -1,0 +1,51 @@
+# gitbots-worker, dev deployment on the "gitbots" Cloudflare account. See README.md.
+# The account comes from CLOUDFLARE_ACCOUNT_ID; IDs marked SETUP are filled in
+# when the resources are created (see README.md).
+name = "gitbots-dev"
+main = "build/index.js"
+compatibility_date = "2026-10-02"
+
+# Copies the SolidJS build (or a placeholder when web/dist is missing) into
+# ./public, installs worker-build 0.8.7 into ./.tools once (it must match the
+# `worker` crate), then builds the Rust Worker (toolchain: rust-toolchain.toml).
+[build]
+command = "rm -rf public && mkdir -p public && if [ -f ../../web/dist/index.html ]; then cp -R ../../web/dist/. public/; else cp static/index.html public/; fi && (test -x .tools/bin/worker-build || cargo install -q worker-build@0.8.7 --locked --root .tools) && .tools/bin/worker-build --release"
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+run_worker_first = ["/api/*", "/v1/*"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "gitbots-dev"
+database_id = "SETUP"
+migrations_dir = "migrations"
+
+# Artifacts push events (`wrangler queues subscription create`, see README).
+[[queues.consumers]]
+queue = "gitbots-dev-artifact-events"
+max_batch_size = 10
+max_batch_timeout = 5
+max_retries = 5
+
+[[artifacts]]
+binding = "ARTIFACTS"
+namespace = "gitbots-dev"
+
+[vars]
+ARTIFACTS_NAMESPACE = "gitbots-dev"
+ARTIFACTS_ACCOUNT_ID = "SETUP"
+# Event blobs one indexing run may read; the next run continues.
+INDEX_BUDGET = "2000"
+# Queue that new repos subscribe their push events to (needs the optional
+# CF_API_TOKEN secret, see src/subscribe.rs and README.md).
+EVENTS_QUEUE_ID = "SETUP"
+
+[observability]
+enabled = true
+
+# Secrets (not in this file), via `wrangler secret put`:
+#   GITBOTS_ADMIN_KEY  provisioning key for POST /v1/projects (required)
+#   CF_API_TOKEN    optional; lets the Worker subscribe new repos to push events

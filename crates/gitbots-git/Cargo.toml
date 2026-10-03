@@ -1,0 +1,23 @@
+[package]
+name = "gitbots-git"
+description = "gitbots's git layer: ledger branches (gix), workrooms (worktrees), hooks and sync."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+gitbots-core.workspace = true
+anyhow.workspace = true
+gix.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
+time.workspace = true
+
+[lints]
+workspace = true

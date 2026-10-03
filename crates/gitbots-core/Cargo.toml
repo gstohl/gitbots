@@ -1,0 +1,21 @@
+[package]
+name = "gitbots-core"
+description = "Pure domain model for gitbots: identity, events, mandate, recipes, folds. No IO; builds for wasm32."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+globset.workspace = true
+regex.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+thiserror.workspace = true
+time.workspace = true
+ulid.workspace = true
+
+[lints]
+workspace = true

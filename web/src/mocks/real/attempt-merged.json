@@ -1,0 +1,355 @@
+{
+  "attempt": {
+    "base": "integration",
+    "base_commit": "f201916c3a267ade0aeb1532d244ebc9fcfed4cf",
+    "branch": "gitbots/attempt/document-the-api-in-readme-ytym9c",
+    "checks_passed": true,
+    "diff": {
+      "deletions": 0,
+      "files": 1,
+      "insertions": 5
+    },
+    "head": "51c5eceb8bcee5438189cc67b934ec0e5c17d728",
+    "holder": null,
+    "id": "att_01M40M11BN2N7WM1Z23VYTYM9C",
+    "merged_commit": "7d683a1b31ec46febca39040fbbc42019f467bf8",
+    "review": {
+      "at": "2026-10-03T10:12:48.908442Z",
+      "by": {
+        "agent": {
+          "client": "chatgpt",
+          "model": "gpt-5",
+          "provider": "openai"
+        },
+        "session": "ses_01M40M114S0Z2BZG3VNC48EY1A",
+        "type": "agent"
+      },
+      "decision": "accept",
+      "reason": "clear and accurate"
+    },
+    "runs": [
+      {
+        "commit": "51c5eceb8bcee5438189cc67b934ec0e5c17d728",
+        "run": "run_01M40M11JYYPG804YN99ZZJF7M",
+        "status": "success",
+        "workflow": "ci"
+      }
+    ],
+    "session": "ses_01M40M113DFX5J1RPCBT5JQ27B",
+    "started_at": "2026-10-03T10:12:48.162818Z",
+    "started_by": {
+      "agent": {
+        "client": "claude-code",
+        "model": "claude-haiku-4-5",
+        "provider": "anthropic"
+      },
+      "parent": "ses_01M40M110HQMHC78JWCVSE4ECG",
+      "session": "ses_01M40M113DFX5J1RPCBT5JQ27B",
+      "type": "agent"
+    },
+    "state": "merged",
+    "submitted_by": {
+      "agent": {
+        "client": "claude-code",
+        "model": "claude-haiku-4-5",
+        "provider": "anthropic"
+      },
+      "parent": "ses_01M40M110HQMHC78JWCVSE4ECG",
+      "session": "ses_01M40M113DFX5J1RPCBT5JQ27B",
+      "type": "agent"
+    },
+    "summary": "README endpoint list",
+    "task": "tsk_01M40M1198WD2G1BMM5DSFWTPY",
+    "updated_at": "2026-10-03T10:12:48.988343Z"
+  },
+  "commits": [
+    {
+      "sha": "51c5eceb8bcee5438189cc67b934ec0e5c17d728",
+      "subject": "Document endpoints",
+      "trailers": [
+        [
+          "Gitbots-Session",
+          "ses_01M40M113DFX5J1RPCBT5JQ27B"
+        ],
+        [
+          "Gitbots-Provider",
+          "anthropic"
+        ],
+        [
+          "Gitbots-Model",
+          "claude-haiku-4-5"
+        ],
+        [
+          "Gitbots-Client",
+          "claude-code"
+        ],
+        [
+          "Gitbots-Parent-Session",
+          "ses_01M40M110HQMHC78JWCVSE4ECG"
+        ]
+      ]
+    }
+  ],
+  "events": [
+    {
+      "actor": {
+        "agent": {
+          "client": "claude-code",
+          "model": "claude-haiku-4-5",
+          "provider": "anthropic"
+        },
+        "parent": "ses_01M40M110HQMHC78JWCVSE4ECG",
+        "session": "ses_01M40M113DFX5J1RPCBT5JQ27B",
+        "type": "agent"
+      },
+      "data": {
+        "attempt": "att_01M40M11BN2N7WM1Z23VYTYM9C",
+        "base": "integration",
+        "base_commit": "f201916c3a267ade0aeb1532d244ebc9fcfed4cf",
+        "branch": "gitbots/attempt/document-the-api-in-readme-ytym9c",
+        "session": "ses_01M40M113DFX5J1RPCBT5JQ27B",
+        "task": "tsk_01M40M1198WD2G1BMM5DSFWTPY"
+      },
+      "id": "evt_01M40M11D2HR5H0Z989JXCZX76",
+      "kind": "attempt.started",
+      "producer": "gitbots/0.1.0",
+      "ts": "2026-10-03T10:12:48.162818Z",
+      "v": 1,
+      "via": "env"
+    },
+    {
+      "actor": {
+        "agent": {
+          "client": "claude-code",
+          "model": "claude-haiku-4-5",
+          "provider": "anthropic"
+        },
+        "parent": "ses_01M40M110HQMHC78JWCVSE4ECG",
+        "session": "ses_01M40M113DFX5J1RPCBT5JQ27B",
+        "type": "agent"
+      },
+      "data": {
+        "attempt": "att_01M40M11BN2N7WM1Z23VYTYM9C",
+        "branch": "gitbots/attempt/document-the-api-in-readme-ytym9c",
+        "diff": {
+          "deletions": 0,
+          "files": 1,
+          "insertions": 5
+        },
+        "sha": "51c5eceb8bcee5438189cc67b934ec0e5c17d728",
+        "subject": "Document endpoints"
+      },
+      "id": "evt_01M40M11FWKS2WJKB4XTM2KBWZ",
+      "idem": "commit:51c5eceb8bcee5438189cc67b934ec0e5c17d728",
+      "kind": "commit.recorded",
+      "producer": "gitbots/0.1.0",
+      "ts": "2026-10-03T10:12:48.253378Z",
+      "v": 1,
+      "via": "worktree"
+    },
+    {
+      "actor": {
+        "agent": {
+          "client": "claude-code",
+          "model": "claude-haiku-4-5",
+          "provider": "anthropic"
+        },
+        "parent": "ses_01M40M110HQMHC78JWCVSE4ECG",
+        "session": "ses_01M40M113DFX5J1RPCBT5JQ27B",
+        "type": "agent"
+      },
+      "data": {
+        "attempt": "att_01M40M11BN2N7WM1Z23VYTYM9C",
+        "diff": {
+          "deletions": 0,
+          "files": 1,
+          "insertions": 5
+        },
+        "head": "51c5eceb8bcee5438189cc67b934ec0e5c17d728",
+        "mandate": "3a386abf87f55b117ab0c15ebaf5ee1b8bfbc556",
+        "summary": "README endpoint list"
+      },
+      "id": "evt_01M40M11HSXKXTCCQEQRGPYMDT",
+      "kind": "attempt.submitted",
+      "producer": "gitbots/0.1.0",
+      "ts": "2026-10-03T10:12:48.314032Z",
+      "v": 1,
+      "via": "worktree"
+    },
+    {
+      "actor": {
+        "component": "actions",
+        "type": "system"
+      },
+      "data": {
+        "attempt": "att_01M40M11BN2N7WM1Z23VYTYM9C",
+        "commit": "51c5eceb8bcee5438189cc67b934ec0e5c17d728",
+        "duration_ms": 59,
+        "jobs": [
+          {
+            "duration_ms": 4,
+            "exit_code": 0,
+            "log": {
+              "branch": "gitbots/logs",
+              "path": "runs/2026/10/03/run_01M40M11JYYPG804YN99ZZJF7M/lint.log"
+            },
+            "name": "lint",
+            "status": "success"
+          },
+          {
+            "duration_ms": 42,
+            "exit_code": 0,
+            "log": {
+              "branch": "gitbots/logs",
+              "path": "runs/2026/10/03/run_01M40M11JYYPG804YN99ZZJF7M/test.log"
+            },
+            "name": "test",
+            "status": "success"
+          }
+        ],
+        "run": "run_01M40M11JYYPG804YN99ZZJF7M",
+        "runner": "local",
+        "status": "success",
+        "trigger": "attempt.submitted",
+        "workflow": "ci"
+      },
+      "id": "evt_01M40M11MTSD3M4XD4FD6WNT23",
+      "kind": "action.completed",
+      "producer": "gitbots/0.1.0",
+      "ts": "2026-10-03T10:12:48.411437Z",
+      "v": 1,
+      "via": "system"
+    },
+    {
+      "actor": {
+        "agent": {
+          "client": "chatgpt",
+          "model": "gpt-5",
+          "provider": "openai"
+        },
+        "session": "ses_01M40M114S0Z2BZG3VNC48EY1A",
+        "type": "agent"
+      },
+      "data": {
+        "attempt": "att_01M40M11BN2N7WM1Z23VYTYM9C",
+        "decision": "accept",
+        "mandate": "3a386abf87f55b117ab0c15ebaf5ee1b8bfbc556",
+        "reason": "clear and accurate"
+      },
+      "id": "evt_01M40M124BHMFQTXFP9P71X32J",
+      "kind": "review.decided",
+      "producer": "gitbots/0.1.0",
+      "ts": "2026-10-03T10:12:48.908442Z",
+      "v": 1,
+      "via": "env"
+    },
+    {
+      "actor": {
+        "agent": {
+          "client": "chatgpt",
+          "model": "gpt-5",
+          "provider": "openai"
+        },
+        "session": "ses_01M40M114S0Z2BZG3VNC48EY1A",
+        "type": "agent"
+      },
+      "data": {
+        "attempt": "att_01M40M11BN2N7WM1Z23VYTYM9C",
+        "commit": "7d683a1b31ec46febca39040fbbc42019f467bf8",
+        "into": "integration",
+        "source_commits": [
+          "51c5eceb8bcee5438189cc67b934ec0e5c17d728"
+        ]
+      },
+      "id": "evt_01M40M126V9VKXFJ28NGGAKBNS",
+      "kind": "attempt.merged",
+      "on": "evt_01M40M124BHMFQTXFP9P71X32J",
+      "producer": "gitbots/0.1.0",
+      "ts": "2026-10-03T10:12:48.988343Z",
+      "v": 1,
+      "via": "env"
+    }
+  ],
+  "runs": [
+    {
+      "attempt": "att_01M40M11BN2N7WM1Z23VYTYM9C",
+      "commit": "51c5eceb8bcee5438189cc67b934ec0e5c17d728",
+      "duration_ms": 59,
+      "jobs": [
+        {
+          "duration_ms": 4,
+          "exit_code": 0,
+          "log": {
+            "branch": "gitbots/logs",
+            "path": "runs/2026/10/03/run_01M40M11JYYPG804YN99ZZJF7M/lint.log"
+          },
+          "name": "lint",
+          "status": "success"
+        },
+        {
+          "duration_ms": 42,
+          "exit_code": 0,
+          "log": {
+            "branch": "gitbots/logs",
+            "path": "runs/2026/10/03/run_01M40M11JYYPG804YN99ZZJF7M/test.log"
+          },
+          "name": "test",
+          "status": "success"
+        }
+      ],
+      "run": "run_01M40M11JYYPG804YN99ZZJF7M",
+      "runner": "local",
+      "status": "success",
+      "trigger": "attempt.submitted",
+      "workflow": "ci"
+    }
+  ],
+  "session_chain": [
+    {
+      "agent": {
+        "client": "claude-code",
+        "model": "claude-haiku-4-5",
+        "provider": "anthropic"
+      },
+      "id": "ses_01M40M113DFX5J1RPCBT5JQ27B",
+      "label": "opus subagent",
+      "operator": "gstohl",
+      "parent": "ses_01M40M110HQMHC78JWCVSE4ECG",
+      "role": "tester",
+      "started_at": "2026-10-03T10:12:47.867492Z"
+    },
+    {
+      "agent": {
+        "client": "claude-code",
+        "model": "claude-opus-5-5",
+        "provider": "anthropic"
+      },
+      "id": "ses_01M40M110HQMHC78JWCVSE4ECG",
+      "label": "lead dev",
+      "operator": "gstohl",
+      "role": "implementer",
+      "started_at": "2026-10-03T10:12:47.775681Z"
+    }
+  ],
+  "task": {
+    "attempts": [
+      "att_01M40M11BN2N7WM1Z23VYTYM9C"
+    ],
+    "body": null,
+    "created_at": "2026-10-03T10:12:48.041451Z",
+    "created_by": {
+      "email": "dominik@example.com",
+      "handle": "gstohl",
+      "type": "human"
+    },
+    "id": "tsk_01M40M1198WD2G1BMM5DSFWTPY",
+    "labels": [
+      "docs"
+    ],
+    "recipe": null,
+    "status": "done",
+    "title": "Document the API in README"
+  },
+  "violations": [],
+  "workroom": "/private/tmp/claude-501/-Users-dominik-Documents-riwork-SantoshXGstohl/1532846c-0e49-4371-9ddb-f09e6a5ba8b0/scratchpad/demo2/gitbots-home/workrooms/prj_01M40M10FQ7TDCJ2HT6NJ83K96/document-the-api-in-readme-ytym9c"
+}

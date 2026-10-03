@@ -1,0 +1,136 @@
+{
+  "awaiting_review": [
+    {
+      "base": "integration",
+      "base_commit": "f201916c3a267ade0aeb1532d244ebc9fcfed4cf",
+      "branch": "gitbots/attempt/add-token-auth-middleware-5hya26",
+      "diff": {
+        "deletions": 0,
+        "files": 1,
+        "insertions": 3
+      },
+      "head": "9e6e1ffb5972e60cf6f91a46ede042123d1e923d",
+      "holder": null,
+      "id": "att_01M40M11BNH1CFSTFH8C5HYA26",
+      "merged_commit": null,
+      "review": null,
+      "runs": [
+        {
+          "commit": "9e6e1ffb5972e60cf6f91a46ede042123d1e923d",
+          "run": "run_01M40M11K67BPDN95H84FR25G4",
+          "status": "failure",
+          "workflow": "ci"
+        }
+      ],
+      "session": "ses_01M40M111Y3ER013F0Y4CPDT75",
+      "started_at": "2026-10-03T10:12:48.162823Z",
+      "started_by": {
+        "agent": {
+          "client": "codex",
+          "model": "gpt-5-codex",
+          "provider": "openai"
+        },
+        "session": "ses_01M40M111Y3ER013F0Y4CPDT75",
+        "type": "agent"
+      },
+      "state": "submitted",
+      "submitted_by": {
+        "agent": {
+          "client": "codex",
+          "model": "gpt-5-codex",
+          "provider": "openai"
+        },
+        "session": "ses_01M40M111Y3ER013F0Y4CPDT75",
+        "type": "agent"
+      },
+      "summary": "bearer token check (stub)",
+      "task": "tsk_01M40M117YXRC7FV40SB51SBFW",
+      "updated_at": "2026-10-03T10:12:48.373024Z"
+    },
+    {
+      "base": "integration",
+      "base_commit": "f201916c3a267ade0aeb1532d244ebc9fcfed4cf",
+      "branch": "gitbots/attempt/add-token-auth-middleware-3ddn0p",
+      "diff": {
+        "deletions": 0,
+        "files": 1,
+        "insertions": 4
+      },
+      "head": "1a73088abba2c17cf0f92828824865b9615b1247",
+      "holder": null,
+      "id": "att_01M40M11NKNN21B64WM03DDN0P",
+      "merged_commit": null,
+      "review": null,
+      "runs": [
+        {
+          "commit": "1a73088abba2c17cf0f92828824865b9615b1247",
+          "run": "run_01M40M11VM6VM3H6220FWQ7GNR",
+          "status": "success",
+          "workflow": "ci"
+        }
+      ],
+      "session": "ses_01M40M110HQMHC78JWCVSE4ECG",
+      "started_at": "2026-10-03T10:12:48.46792Z",
+      "started_by": {
+        "agent": {
+          "client": "claude-code",
+          "model": "claude-opus-5-5",
+          "provider": "anthropic"
+        },
+        "session": "ses_01M40M110HQMHC78JWCVSE4ECG",
+        "type": "agent"
+      },
+      "state": "submitted",
+      "submitted_by": {
+        "agent": {
+          "client": "claude-code",
+          "model": "claude-opus-5-5",
+          "provider": "anthropic"
+        },
+        "session": "ses_01M40M110HQMHC78JWCVSE4ECG",
+        "type": "agent"
+      },
+      "summary": "hmac compare, no TODOs",
+      "task": "tsk_01M40M117YXRC7FV40SB51SBFW",
+      "updated_at": "2026-10-03T10:12:48.681951Z"
+    }
+  ],
+  "reports": [
+    {
+      "at": "2026-10-03T10:12:49.124147Z",
+      "by": {
+        "agent": {
+          "client": "codex",
+          "model": "gpt-5-codex",
+          "provider": "openai"
+        },
+        "session": "ses_01M40M111Y3ER013F0Y4CPDT75",
+        "type": "agent"
+      },
+      "id": "evt_01M40M12B3G2CZFB5JGZ2ANJ5H",
+      "report": {
+        "body": "Per-IP or per-token? I can't continue without it.",
+        "level": "blocker",
+        "title": "Need a decision on rate limits"
+      }
+    },
+    {
+      "at": "2026-10-03T10:12:49.095166Z",
+      "by": {
+        "agent": {
+          "client": "claude-code",
+          "model": "claude-opus-5-5",
+          "provider": "anthropic"
+        },
+        "session": "ses_01M40M110HQMHC78JWCVSE4ECG",
+        "type": "agent"
+      },
+      "id": "evt_01M40M12A6F1W4RTEF4P9GQACP",
+      "report": {
+        "body": "Codex's still has a TODO (lint fails); mine uses hmac. Pick one.",
+        "level": "warning",
+        "title": "Two auth attempts are ready"
+      }
+    }
+  ]
+}

@@ -1,0 +1,288 @@
+/* Unified diff view. Line numbers come from data attributes (::before), so
+   they aren't copied with the code. */
+
+.diffview {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  grid-template-areas:
+    "bar bar"
+    "tree files";
+  gap: var(--s-3);
+  align-items: start;
+}
+.diffview.no-tree {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas:
+    "bar"
+    "files";
+}
+.diff-toolbar {
+  grid-area: bar;
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  flex-wrap: wrap;
+}
+.diff-totals {
+  font-size: var(--fs-md);
+  color: var(--text-2);
+}
+.diff-tree {
+  grid-area: tree;
+  position: sticky;
+  top: calc(var(--topbar-h) + var(--s-3));
+  max-height: calc(100vh - var(--topbar-h) - 32px);
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--r-3);
+  background: var(--surface);
+  padding: 4px;
+}
+.diff-tree ul {
+  margin: 0;
+}
+.diff-tree-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 4px 6px;
+  border: 0;
+  border-radius: var(--r-1);
+  background: none;
+  cursor: pointer;
+  text-align: left;
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+}
+.diff-tree-item:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+.diff-tree-path {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  direction: rtl;
+  text-align: left;
+}
+.diff-tree-stat {
+  display: inline-flex;
+  gap: 4px;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+}
+.fstatus {
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  background: var(--surface-3);
+  color: var(--text-2);
+}
+.fs-added {
+  background: var(--good-bg);
+  color: var(--good-fg);
+}
+.fs-deleted {
+  background: var(--bad-bg);
+  color: var(--bad-fg);
+}
+.fs-renamed,
+.fs-copied {
+  background: var(--merged-bg);
+  color: var(--merged-fg);
+}
+.fs-modified {
+  background: var(--warn-bg);
+  color: var(--warn-fg);
+}
+
+.diff-files {
+  grid-area: files;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  min-width: 0;
+}
+.diff-file {
+  border: 1px solid var(--border);
+  border-radius: var(--r-3);
+  background: var(--surface);
+  /* clip, not hidden: hidden would make this the sticky header's scroll container. */
+  overflow: hidden;
+  overflow: clip;
+  scroll-margin-top: calc(var(--topbar-h) + var(--s-3));
+}
+.diff-file-head {
+  position: sticky;
+  top: var(--topbar-h);
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: 6px var(--s-2);
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border);
+  min-width: 0;
+}
+.diff-toggle {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border: 0;
+  border-radius: var(--r-1);
+  background: none;
+  cursor: pointer;
+  color: var(--text-2);
+}
+.diff-toggle:hover {
+  background: var(--surface-3);
+}
+.chev {
+  display: inline-block;
+  transition: transform 0.12s;
+  font-size: 11px;
+}
+.chev.open {
+  transform: rotate(90deg);
+}
+.diff-path {
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.diff-file-stat {
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  white-space: nowrap;
+}
+.diff-note {
+  padding: var(--s-3) var(--s-4);
+  font-size: var(--fs-sm);
+}
+.diff-load {
+  display: block;
+  width: 100%;
+  padding: var(--s-3);
+  border: 0;
+  background: var(--surface);
+  color: var(--accent-text);
+  cursor: pointer;
+  font-size: var(--fs-sm);
+}
+.diff-load:hover {
+  background: var(--surface-2);
+}
+.diff-empty {
+  padding: var(--s-6) 0;
+  text-align: center;
+}
+
+.diff-scroll {
+  overflow-x: auto;
+}
+.diff-table {
+  width: 100%;
+  min-width: max-content;
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 20px;
+  tab-size: 4;
+}
+.diff-table .col-ln {
+  width: 48px;
+}
+.diff-table td {
+  padding: 0;
+  vertical-align: top;
+}
+.dl .ln {
+  min-width: 48px;
+  padding: 0 8px;
+  text-align: right;
+  color: var(--text-3);
+  user-select: none;
+  border-right: 1px solid var(--border);
+  font-variant-numeric: tabular-nums;
+}
+.dl .ln::before {
+  content: attr(data-ln);
+}
+.dl .code {
+  padding: 0 var(--s-3) 0 22px;
+  white-space: pre;
+  position: relative;
+}
+.dl .code::before {
+  content: attr(data-sign);
+  position: absolute;
+  left: 8px;
+  color: var(--text-3);
+  user-select: none;
+}
+.dl-add .code {
+  background: var(--diff-add-bg);
+}
+.dl-add .ln {
+  background: var(--diff-add-gutter);
+  color: var(--diff-add-fg);
+}
+.dl-add .code::before {
+  color: var(--diff-add-fg);
+}
+.dl-del .code {
+  background: var(--diff-del-bg);
+}
+.dl-del .ln {
+  background: var(--diff-del-gutter);
+  color: var(--diff-del-fg);
+}
+.dl-del .code::before {
+  color: var(--diff-del-fg);
+}
+.dl-hunk td {
+  background: var(--diff-hunk-bg);
+  color: var(--diff-hunk-fg);
+}
+.dl-hunk .code {
+  padding: 2px var(--s-3);
+}
+.dl-meta .code {
+  color: var(--text-3);
+  font-style: italic;
+}
+
+@media (max-width: 900px) {
+  .diffview {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "bar"
+      "tree"
+      "files";
+  }
+  .diff-tree {
+    position: static;
+    max-height: 220px;
+  }
+}
+@media (max-width: 640px) {
+  .diff-table .col-ln {
+    width: 36px;
+  }
+  .dl .ln {
+    min-width: 36px;
+    padding: 0 4px;
+  }
+}
